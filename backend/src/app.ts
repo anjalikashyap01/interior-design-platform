@@ -6,6 +6,7 @@ import env from "./config/env";
 import { notFoundMiddleware } from "./middleware/not-found.middleware";
 import { errorMiddleware } from "./middleware/error.middleware";
 import apiRoutes from "./routes";
+import { clerkMiddleware } from "@clerk/express";
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use(
   })
 );
 
+app.use(clerkMiddleware());
 // Request body parsing
 app.use(
   express.json({
