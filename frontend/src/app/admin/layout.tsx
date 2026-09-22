@@ -15,11 +15,7 @@ const navigation = [
   { label: "Projects", href: "/admin/projects" },
   { label: "Services", href: "/admin/services" },
   { label: "Testimonials", href: "/admin/testimonials" },
-  { label: "Gallery", href: "/admin/gallery" },
-  { label: "Leads", href: "/admin/leads" },
-  { label: "Consultations", href: "/admin/consultations" },
   { label: "Office", href: "/admin/office" },
-  { label: "Settings", href: "/admin/settings" },
 ];
 
 export default function AdminLayout({
@@ -33,7 +29,9 @@ export default function AdminLayout({
   // null = checking
   // true = authenticated
   // false = not authenticated
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(
+    null
+  );
 
   useEffect(() => {
     // Login page does not need authentication checking
@@ -98,11 +96,9 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-[#f7f5f2] text-[#171614]">
       <div className="flex min-h-screen">
-
         {/* Sidebar */}
         <aside className="hidden w-64 shrink-0 border-r border-[#393632] bg-[#24221f] lg:block">
           <div className="sticky top-0 flex h-screen flex-col">
-
             {/* Logo */}
             <div className="border-b border-[#45413b] px-6 py-6">
               <Link
@@ -129,8 +125,8 @@ export default function AdminLayout({
                       href={item.href}
                       className={`block rounded-lg px-4 py-3 text-sm font-medium transition ${
                         active
-                          ? "bg-white text-[#171614] shadow-sm"
-                          : "text-[#e7e3dd] hover:bg-[#37332e] hover:text-white"
+                          ? "bg-white text-[#fff8e9] shadow-sm"
+                          : "text-[#e7e3dd] hover:bg-[#2c2a27] hover:text-white"
                       }`}
                     >
                       {item.label}
@@ -141,11 +137,11 @@ export default function AdminLayout({
             </nav>
 
             {/* Sidebar Logout */}
-            <div className="border-t border-[#45413b] p-4">
+            <div className="border-t border-[#efe7da] p-4">
               <button
                 type="button"
                 onClick={handleLogout}
-                className="w-full rounded-lg border border-[#716b63] bg-transparent px-4 py-2.5 text-sm font-medium text-white transition hover:border-[#aaa298] hover:bg-[#37332e]"
+                className="w-full rounded-lg border border-[#716b63] bg-transparent px-4 py-2.5 text-sm font-medium text-white transition hover:border-[#aaa298] hover:bg-[#fff7ec]"
               >
                 Logout
               </button>
@@ -155,19 +151,17 @@ export default function AdminLayout({
 
         {/* Main Content */}
         <div className="flex min-w-0 flex-1 flex-col bg-[#f7f5f2]">
-
           {/* Header */}
           <header className="sticky top-0 z-20 border-b border-[#ded9d1] bg-white">
             <div className="flex items-center justify-between px-4 py-4 lg:px-8">
-
-              <h1 className="text-lg font-semibold text-[#171614]">
+              <h1 className="text-lg font-semibold text-[#ebe1cf]">
                 Admin Panel
               </h1>
 
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-lg border border-[#c9c3ba] bg-white px-3 py-2 text-sm font-semibold text-[#24221f] transition hover:bg-[#f3f0eb]"
+                className="rounded-lg border border-[#c9c3ba] bg-white px-3 py-2 text-sm font-semibold text-[#f5e2c7] transition hover:bg-[#f3f0eb]"
               >
                 Logout
               </button>
@@ -185,8 +179,8 @@ export default function AdminLayout({
                       href={item.href}
                       className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                         active
-                          ? "bg-[#24221f] text-white"
-                          : "bg-[#f0ede8] text-[#302e2a] hover:bg-[#e5e0d8]"
+                          ? "bg-[#d2cec9] text-white"
+                          : "bg-[#f0ede8] text-[#d8d4cb] hover:bg-[#e5e0d8]"
                       }`}
                     >
                       {item.label}
@@ -201,7 +195,6 @@ export default function AdminLayout({
           <main className="min-h-[calc(100vh-73px)] flex-1 bg-[#f7f5f2] p-4 text-[#171614] lg:p-8">
             {children}
           </main>
-
         </div>
       </div>
     </div>

@@ -49,9 +49,35 @@ export default function NewDesignPage() {
       formData.append("description", description);
       formData.append("roomType", roomType);
       formData.append("style", style);
-      formData.append("colors", colors);
-      formData.append("materials", materials);
-      formData.append("tags", tags);
+      const colorsArray = colors
+  .split(",")
+  .map((item) => item.trim())
+  .filter(Boolean);
+
+const materialsArray = materials
+  .split(",")
+  .map((item) => item.trim())
+  .filter(Boolean);
+
+const tagsArray = tags
+  .split(",")
+  .map((item) => item.trim())
+  .filter(Boolean);
+
+formData.append(
+  "colors",
+  JSON.stringify(colorsArray)
+);
+
+formData.append(
+  "materials",
+  JSON.stringify(materialsArray)
+);
+
+formData.append(
+  "tags",
+  JSON.stringify(tagsArray)
+);
 
       if (budgetMin) {
         formData.append("budgetMin", budgetMin);

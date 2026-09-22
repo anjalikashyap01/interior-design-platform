@@ -3,68 +3,32 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { adminDesignApi, Design } from "@/lib/api";
+import {
+  adminDesignApi,
+  Design,
+} from "@/lib/api";
 
 export default function AdminDesignsPage() {
   const [designs, setDesigns] = useState<Design[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [actionId, setActionId] = useState<string | null>(null);
-
-  // Safely normalize the response returned by the API.
-  const normalizeDesigns = (result: unknown): Design[] => {
-    if (Array.isArray(result)) {
-      return result as Design[];
-    }
-
-    if (!result || typeof result !== "object") {
-      return [];
-    }
-
-    const response = result as {
-      designs?: unknown;
-      data?: unknown;
-    };
-
-    if (Array.isArray(response.designs)) {
-      return response.designs as Design[];
-    }
-
-    if (Array.isArray(response.data)) {
-      return response.data as Design[];
-    }
-
-    if (
-      response.data &&
-      typeof response.data === "object" &&
-      !Array.isArray(response.data)
-    ) {
-      const nested = response.data as {
-        designs?: unknown;
-      };
-
-      if (Array.isArray(nested.designs)) {
-        return nested.designs as Design[];
-      }
-    }
-
-    return [];
-  };
+  const [actionId, setActionId] =
+    useState<string | null>(null);
 
   const loadDesigns = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const result = await adminDesignApi.getDesigns();
+      const result =
+        await adminDesignApi.getDesigns();
 
-      console.log("DESIGNS API RESPONSE:", result);
-
-      const receivedDesigns = normalizeDesigns(result);
-
-      setDesigns(receivedDesigns);
+      setDesigns(result.items);
     } catch (err) {
-      console.error("Failed to load designs:", err);
+      console.error(
+        "Failed to load designs:",
+        err
+      );
 
       setError(
         err instanceof Error
@@ -78,19 +42,21 @@ export default function AdminDesignsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadDesigns();
-    }, 0);
+ useEffect(() => {
+  const load = async () => {
+    await loadDesigns();
+  };
 
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [loadDesigns]);
+  void load();
+}, [loadDesigns]);
 
   const runAction = async (
     id: string,
-    action: "publish" | "unpublish" | "archive" | "unarchive"
+    action:
+      | "publish"
+      | "unpublish"
+      | "archive"
+      | "unarchive"
   ) => {
     try {
       setActionId(id);
@@ -100,25 +66,31 @@ export default function AdminDesignsPage() {
 
       switch (action) {
         case "publish":
-          updated = await adminDesignApi.publishDesign(id);
+          updated =
+            await adminDesignApi.publishDesign(id);
           break;
 
         case "unpublish":
-          updated = await adminDesignApi.unpublishDesign(id);
+          updated =
+            await adminDesignApi.unpublishDesign(id);
           break;
 
         case "archive":
-          updated = await adminDesignApi.archiveDesign(id);
+          updated =
+            await adminDesignApi.archiveDesign(id);
           break;
 
         case "unarchive":
-          updated = await adminDesignApi.unarchiveDesign(id);
+          updated =
+            await adminDesignApi.unarchiveDesign(id);
           break;
       }
 
       setDesigns((current) =>
         current.map((design) =>
-          design._id === id ? updated : design
+          design._id === id
+            ? updated
+            : design
         )
       );
     } catch (err) {
@@ -132,7 +104,9 @@ export default function AdminDesignsPage() {
     }
   };
 
-  const deleteDesign = async (id: string) => {
+  const deleteDesign = async (
+    id: string
+  ) => {
     const confirmed = window.confirm(
       "Are you sure you want to permanently delete this design?"
     );
@@ -148,7 +122,9 @@ export default function AdminDesignsPage() {
       await adminDesignApi.deleteDesign(id);
 
       setDesigns((current) =>
-        current.filter((design) => design._id !== id)
+        current.filter(
+          (design) => design._id !== id
+        )
       );
     } catch (err) {
       setError(
@@ -175,12 +151,10 @@ export default function AdminDesignsPage() {
     );
   }
 
-  // Extra protection against unexpected state values.
-  const safeDesigns = Array.isArray(designs) ? designs : [];
-
   return (
     <main className="min-h-screen p-8">
       <div className="mx-auto max-w-7xl">
+
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -195,7 +169,7 @@ export default function AdminDesignsPage() {
 
           <Link
             href="/admin/designs/new"
-            className="rounded-lg bg-black px-5 py-3 text-center text-white transition hover:bg-gray-800"
+            className="rounded-lg bg-yellow-600 px-5 py-3 text-center text-white transition hover:bg-gray-800"
           >
             + Create Design
           </Link>
@@ -212,33 +186,36 @@ export default function AdminDesignsPage() {
         )}
 
         {/* Empty State */}
-        {safeDesigns.length === 0 ? (
+        {designs.length === 0 ? (
           <div className="rounded-xl border border-dashed bg-white p-12 text-center">
             <h2 className="text-xl font-semibold text-gray-900">
               No designs found
             </h2>
 
             <p className="mt-2 text-gray-600">
-              Create your first interior design or check your API response.
+              Create your first interior design.
             </p>
 
-            <Link
-              href="/admin/designs/new"
-              className="mt-6 inline-block rounded-lg bg-black px-5 py-3 text-white hover:bg-gray-800"
-            >
-              Create Design
-            </Link>
+            <div className="mt-6 flex justify-center gap-3">
+              <Link
+                href="/admin/designs/new"
+                className="rounded-lg bg-yellow-600 px-5 py-3 text-white hover:bg-yellow-700"
+              >
+                Create Design
+              </Link>
 
-            <button
-              type="button"
-              onClick={() => void loadDesigns()}
-              className="ml-3 mt-6 rounded-lg border px-5 py-3 text-gray-700 hover:bg-gray-50"
-            >
-              Refresh
-            </button>
+              <button
+                type="button"
+                onClick={() =>
+                  void loadDesigns()
+                }
+                className="rounded-lg border px-5 py-3 hover:bg-gray-50"
+              >
+                Refresh
+              </button>
+            </div>
           </div>
         ) : (
-          /* Designs Table */
           <div className="overflow-hidden rounded-xl border bg-white">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -267,7 +244,7 @@ export default function AdminDesignsPage() {
                 </thead>
 
                 <tbody className="divide-y">
-                  {safeDesigns.map((design) => (
+                  {designs.map((design) => (
                     <tr
                       key={design._id}
                       className="hover:bg-gray-50"
@@ -277,7 +254,9 @@ export default function AdminDesignsPage() {
                         <div className="flex items-center gap-4">
                           {design.images?.[0]?.url ? (
                             <Image
-                              src={design.images[0].url}
+                              src={
+                                design.images[0].url
+                              }
                               alt={
                                 design.images[0].alt ||
                                 design.title
@@ -298,7 +277,8 @@ export default function AdminDesignsPage() {
                             </p>
 
                             <p className="text-sm text-gray-500">
-                              {design.images?.length || 0} images
+                              {design.images?.length || 0}{" "}
+                              images
                             </p>
                           </div>
                         </div>
@@ -306,7 +286,9 @@ export default function AdminDesignsPage() {
 
                       {/* Room */}
                       <td className="px-5 py-4 capitalize text-gray-700">
-                        {design.roomType?.replace(/-/g, " ") || "—"}
+                        {design.roomType
+                          ?.replace(/-/g, " ") ||
+                          "—"}
                       </td>
 
                       {/* Style */}
@@ -334,49 +316,73 @@ export default function AdminDesignsPage() {
                       {/* Actions */}
                       <td className="px-5 py-4">
                         <div className="flex flex-wrap justify-end gap-2">
+
                           {/* Publish */}
-                          {!design.isArchived && !design.published && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                void runAction(design._id, "publish")
-                              }
-                              disabled={actionId === design._id}
-                              className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              {actionId === design._id
-                                ? "..."
-                                : "Publish"}
-                            </button>
-                          )}
+                          {!design.isArchived &&
+                            !design.published && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void runAction(
+                                    design._id,
+                                    "publish"
+                                  )
+                                }
+                                disabled={
+                                  actionId ===
+                                  design._id
+                                }
+                                className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {actionId ===
+                                design._id
+                                  ? "..."
+                                  : "Publish"}
+                              </button>
+                            )}
 
                           {/* Unpublish */}
-                          {!design.isArchived && design.published && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                void runAction(design._id, "unpublish")
-                              }
-                              disabled={actionId === design._id}
-                              className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              {actionId === design._id
-                                ? "..."
-                                : "Unpublish"}
-                            </button>
-                          )}
+                          {!design.isArchived &&
+                            design.published && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void runAction(
+                                    design._id,
+                                    "unpublish"
+                                  )
+                                }
+                                disabled={
+                                  actionId ===
+                                  design._id
+                                }
+                                className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {actionId ===
+                                design._id
+                                  ? "..."
+                                  : "Unpublish"}
+                              </button>
+                            )}
 
                           {/* Archive / Unarchive */}
                           {design.isArchived ? (
                             <button
                               type="button"
                               onClick={() =>
-                                void runAction(design._id, "unarchive")
+                                void runAction(
+                                  design._id,
+                                  "unarchive"
+                                )
                               }
-                              disabled={actionId === design._id}
+                              disabled={
+                                actionId ===
+                                design._id
+                              }
                               className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {actionId === design._id
+                              {actionId ===
+                              design._id
                                 ? "..."
                                 : "Unarchive"}
                             </button>
@@ -384,12 +390,19 @@ export default function AdminDesignsPage() {
                             <button
                               type="button"
                               onClick={() =>
-                                void runAction(design._id, "archive")
+                                void runAction(
+                                  design._id,
+                                  "archive"
+                                )
                               }
-                              disabled={actionId === design._id}
+                              disabled={
+                                actionId ===
+                                design._id
+                              }
                               className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {actionId === design._id
+                              {actionId ===
+                              design._id
                                 ? "..."
                                 : "Archive"}
                             </button>
@@ -407,12 +420,18 @@ export default function AdminDesignsPage() {
                           <button
                             type="button"
                             onClick={() =>
-                              void deleteDesign(design._id)
+                              void deleteDesign(
+                                design._id
+                              )
                             }
-                            disabled={actionId === design._id}
+                            disabled={
+                              actionId ===
+                              design._id
+                            }
                             className="rounded-md border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            {actionId === design._id
+                            {actionId ===
+                            design._id
                               ? "..."
                               : "Delete"}
                           </button>

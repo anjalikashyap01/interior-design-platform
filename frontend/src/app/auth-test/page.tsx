@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { useAuthenticatedApi } from "@/lib/api/authenticated-client";
+import { useAuthenticatedApi } from "../../lib/api/authenticated-client";
 
 export default function AuthTestPage() {
   const { isLoaded, isSignedIn, user } = useUser();
