@@ -5,6 +5,8 @@ import rateLimit from "express-rate-limit";
 import env from "./config/env";
 import { notFoundMiddleware } from "./middleware/not-found.middleware";
 import { errorMiddleware } from "./middleware/error.middleware";
+import apiRoutes from "./routes";
+import { clerkMiddleware } from "@clerk/express";
 
 const app = express();
 
@@ -27,6 +29,7 @@ app.use(
   })
 );
 
+app.use(clerkMiddleware());
 // Request body parsing
 app.use(
   express.json({
@@ -65,7 +68,7 @@ app.get("/api/health", (_req: Request, res: Response) => {
   });
 });
 
-// 404 handler
+app.use("/api", apiRoutes);
 app.use(notFoundMiddleware);
 
 // Global error handler

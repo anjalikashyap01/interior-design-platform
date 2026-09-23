@@ -1,38 +1,55 @@
-import { Schema, model, type Document } from "mongoose";
+import { Document, Model, Schema, model } from "mongoose";
 
-export type DesignStatus = "draft" | "published";
-
-export type DesignStyle =
-  | "modern"
-  | "minimal"
-  | "contemporary"
-  | "traditional"
-  | "industrial"
-  | "luxury"
-  | "bohemian"
-  | "scandinavian"
-  | "other";
+export interface IDesignImage {
+  url: string;
+  publicId: string;
+  alt?: string;
+}
 
 export interface IDesign extends Document {
-  name: string;
+  title: string;
   slug: string;
   description: string;
-  style: DesignStyle;
-  roomTypes: string[];
-  colorPalette: string[];
+  roomType: string;
+  style: string;
+  colors: string[];
   materials: string[];
-  budgetRange?: string;
-  image: string;
-  images: string[];
-  status: DesignStatus;
+  budgetMin?: number;
+  budgetMax?: number;
+  tags: string[];
+  images: IDesignImage[];
+  aiEnabled: boolean;
   featured: boolean;
+  published: boolean;
+  isArchived: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
+const designImageSchema = new Schema<IDesignImage>(
+  {
+    url: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    publicId: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    alt: {
+      type: String,
+      trim: true,
+      maxlength: 250,
+    },
+  },
+  { _id: false }
+);
+
 const designSchema = new Schema<IDesign>(
   {
-    name: {
+    title: {
       type: String,
       required: true,
       trim: true,
@@ -52,66 +69,60 @@ const designSchema = new Schema<IDesign>(
       type: String,
       required: true,
       trim: true,
-      maxlength: 5000,
+    },
+
+    roomType: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      index: true,
     },
 
     style: {
       type: String,
-      enum: [
-        "modern",
-        "minimal",
-        "contemporary",
-        "traditional",
-        "industrial",
-        "luxury",
-        "bohemian",
-        "scandinavian",
-        "other",
-      ],
-      default: "modern",
       required: true,
+      trim: true,
+      lowercase: true,
       index: true,
     },
 
-    roomTypes: {
+    colors: {
       type: [String],
-      required: true,
       default: [],
       index: true,
-    },
-
-    colorPalette: {
-      type: [String],
-      default: [],
     },
 
     materials: {
       type: [String],
       default: [],
+      index: true,
     },
 
-    budgetRange: {
-      type: String,
-      trim: true,
-      maxlength: 100,
+    budgetMin: {
+      type: Number,
+      min: 0,
     },
 
-    image: {
-      type: String,
-      required: true,
-      trim: true,
+    budgetMax: {
+      type: Number,
+      min: 0,
+    },
+
+    tags: {
+      type: [String],
+      default: [],
+      index: true,
     },
 
     images: {
-      type: [String],
+      type: [designImageSchema],
       default: [],
     },
 
-    status: {
-      type: String,
-      enum: ["draft", "published"],
-      default: "draft",
-      required: true,
+    aiEnabled: {
+      type: Boolean,
+      default: true,
       index: true,
     },
 
@@ -120,13 +131,48 @@ const designSchema = new Schema<IDesign>(
       default: false,
       index: true,
     },
+
+    published: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    isArchived: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
   },
+
   {
     timestamps: true,
-    collection: "designs",
+    versionKey: false,
   }
 );
 
-const Design = model<IDesign>("Design", designSchema);
+designSchema.index({
+  title: "text",
+  description: "text",
+  tags: "text",
+});
+
+designSchema.index({
+  published: 1,
+  isArchived: 1,
+  featured: 1,
+  createdAt: -1,
+});
+
+designSchema.index({
+  roomType: 1,
+  style: 1,
+  isArchived: 1,
+});
+
+const Design: Model<IDesign> = model<IDesign>(
+  "Design",
+  designSchema
+);
 
 export default Design;

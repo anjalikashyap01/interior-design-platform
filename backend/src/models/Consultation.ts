@@ -2,6 +2,7 @@ import { Schema, model, type Document } from "mongoose";
 
 export type ConsultationStatus =
   | "pending"
+  | "contacted"
   | "confirmed"
   | "completed"
   | "cancelled";
@@ -83,6 +84,7 @@ const consultationSchema = new Schema<IConsultation>(
       type: String,
       enum: [
         "pending",
+        "contacted",
         "confirmed",
         "completed",
         "cancelled",

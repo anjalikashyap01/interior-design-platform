@@ -1,12 +1,10 @@
-import { Schema, model, type Document } from "mongoose";
-
-export type AdminRole = "super_admin" | "admin";
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface IAdmin extends Document {
   name: string;
   email: string;
   passwordHash: string;
-  role: AdminRole;
+  role: "ADMIN" | "SUPER_ADMIN";
   isActive: boolean;
   lastLoginAt?: Date;
   createdAt: Date;
@@ -19,6 +17,7 @@ const adminSchema = new Schema<IAdmin>(
       type: String,
       required: true,
       trim: true,
+      minlength: 2,
       maxlength: 100,
     },
 
@@ -26,10 +25,9 @@ const adminSchema = new Schema<IAdmin>(
       type: String,
       required: true,
       unique: true,
-      trim: true,
       lowercase: true,
+      trim: true,
       index: true,
-      maxlength: 150,
     },
 
     passwordHash: {
@@ -40,14 +38,15 @@ const adminSchema = new Schema<IAdmin>(
 
     role: {
       type: String,
-      enum: ["super_admin", "admin"],
-      default: "admin",
+      enum: ["ADMIN", "SUPER_ADMIN"],
+      default: "ADMIN",
       required: true,
     },
 
     isActive: {
       type: Boolean,
       default: true,
+      required: true,
     },
 
     lastLoginAt: {
@@ -56,10 +55,9 @@ const adminSchema = new Schema<IAdmin>(
   },
   {
     timestamps: true,
-    collection: "admins",
   }
 );
 
-const Admin = model<IAdmin>("Admin", adminSchema);
+const Admin = mongoose.model<IAdmin>("Admin", adminSchema);
 
 export default Admin;

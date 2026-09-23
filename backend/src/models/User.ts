@@ -1,22 +1,39 @@
 import { Schema, model, type Document } from "mongoose";
 
+export type UserRole = "customer" | "designer" | "admin";
+
+export type UserStatus = "active" | "inactive" | "suspended";
+
 export interface IUser extends Document {
-  phone: string;
+  clerkUserId: string;
+
+  phone?: string;
   name?: string;
   email?: string;
+
+  role: UserRole;
+  status: UserStatus;
+
   isActive: boolean;
+  isVerified: boolean;
+
   createdAt: Date;
   updatedAt: Date;
 }
 
 const userSchema = new Schema<IUser>(
   {
-    phone: {
+    clerkUserId: {
       type: String,
       required: true,
       unique: true,
-      trim: true,
       index: true,
+      trim: true,
+    },
+
+    phone: {
+      type: String,
+      trim: true,
     },
 
     name: {
@@ -32,9 +49,30 @@ const userSchema = new Schema<IUser>(
       maxlength: 150,
     },
 
+    role: {
+      type: String,
+      enum: ["customer", "designer", "admin"],
+      default: "customer",
+      required: true,
+      index: true,
+    },
+
+    status: {
+      type: String,
+      enum: ["active", "inactive", "suspended"],
+      default: "active",
+      required: true,
+      index: true,
+    },
+
     isActive: {
       type: Boolean,
       default: true,
+    },
+
+    isVerified: {
+      type: Boolean,
+      default: false,
     },
   },
   {

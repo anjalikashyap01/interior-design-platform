@@ -31,7 +31,7 @@ export const validate = (schema: z.ZodTypeAny) => {
     }
 
     if (data.query !== undefined) {
-      req.query = data.query;
+      Object.assign(req.query, data.query); 
     }
 
     next();
