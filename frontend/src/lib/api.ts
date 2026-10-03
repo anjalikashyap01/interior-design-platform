@@ -1,6 +1,46 @@
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000/api";
+  "https://interior-design-platform-u1fg.onrender.com/api";
+
+  const sleep = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+const fetchWithRetry = async (
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  retries = 2
+): Promise<Response> => {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(input, init);
+
+      // Retry temporary Render errors while the backend is waking up.
+      if (
+        [502, 503, 504].includes(response.status) &&
+        attempt < retries
+      ) {
+        await sleep(3000 * (attempt + 1));
+        continue;
+      }
+
+      return response;
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === retries) {
+        throw error;
+      }
+
+      await sleep(3000 * (attempt + 1));
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Request failed after retries");
+};
 
 /* =========================================================
    TYPES
@@ -1223,8 +1263,8 @@ export const adminAboutApi = {
 
 export const publicAboutApi = {
   async getAbout(): Promise<About> {
-    const response = await fetch(
-      `${API_URL}/about`,
+    const response = await fetchWithRetry(
+  `${API_URL}/about`,
       {
         method: "GET",
         cache: "no-store",
@@ -1253,7 +1293,7 @@ export const publicAboutApi = {
 
 export const publicTestimonialApi = {
   async getTestimonials(): Promise<Testimonial[]> {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_URL}/testimonials`,
       {
         method: "GET",
@@ -1322,7 +1362,7 @@ export const publicDesignApi = {
       params.set("search", query.search);
     }
 
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_URL}/designs?${params.toString()}`,
       {
         method: "GET",
@@ -1341,7 +1381,7 @@ export const publicDesignApi = {
   async getDesignBySlug(
     slug: string
   ): Promise<Design> {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_URL}/designs/${encodeURIComponent(slug)}`,
       {
         method: "GET",
@@ -1367,7 +1407,7 @@ export const publicDesignApi = {
 
 export const publicProjectApi = {
   async getProjects(): Promise<ProjectListData> {
-    const response = await fetch(`${API_URL}/projects`, {
+    const response = await fetchWithRetry(`${API_URL}/projects`, {
       method: "GET",
       cache: "no-store",
     });
@@ -1378,7 +1418,7 @@ export const publicProjectApi = {
   },
 
   async getProjectBySlug(slug: string): Promise<Project> {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_URL}/projects/${encodeURIComponent(slug)}`,
       {
         method: "GET",
@@ -1403,7 +1443,7 @@ export const publicProjectApi = {
 
 export const publicServiceApi = {
   async getServices(): Promise<ServiceListData> {
-    const response = await fetch(`${API_URL}/services`, {
+    const response = await fetchWithRetry(`${API_URL}/services`, {
       method: "GET",
       cache: "no-store",
     });
@@ -1417,7 +1457,7 @@ export const publicServiceApi = {
   },
 
   async getServiceBySlug(slug: string): Promise<Service> {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_URL}/services/${encodeURIComponent(slug)}`,
       {
         method: "GET",
@@ -1672,7 +1712,7 @@ export const adminOfficeApi = {
 
 export const publicOfficeApi = {
   async getOffice(): Promise<Office> {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_URL}/office`,
       {
         method: "GET",
