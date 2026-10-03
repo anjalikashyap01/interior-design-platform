@@ -19,29 +19,37 @@ const fileFilter: multer.Options["fileFilter"] = (
         "Only JPG, PNG and WEBP images are allowed"
       )
     );
-
     return;
   }
 
   cb(null, true);
 };
 
+const IMAGE_FILE_SIZE = 10 * 1024 * 1024;
+
 export const uploadDesignImages = multer({
   storage,
   fileFilter,
-
   limits: {
     files: 10,
-    fileSize: 5 * 1024 * 1024,
+    fileSize: IMAGE_FILE_SIZE,
   },
 });
 
 export const uploadServiceImage = multer({
   storage,
   fileFilter,
-
   limits: {
     files: 1,
-    fileSize: 5 * 1024 * 1024,
+    fileSize: IMAGE_FILE_SIZE,
+  },
+});
+
+export const uploadAboutImages = multer({
+  storage,
+  fileFilter,
+  limits: {
+    files: 30,
+    fileSize: IMAGE_FILE_SIZE,
   },
 });

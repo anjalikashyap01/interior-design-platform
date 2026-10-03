@@ -6,6 +6,11 @@ export interface IOfficeHours {
   closed: boolean;
 }
 
+export interface IOfficeSocialHandle {
+  platform: string;
+  url: string;
+}
+
 export interface IOffice extends Document {
   name: string;
   address: string;
@@ -16,6 +21,10 @@ export interface IOffice extends Document {
   email?: string;
   latitude?: number;
   longitude?: number;
+
+  showSocialHandles: boolean;
+  socialHandles: IOfficeSocialHandle[];
+
   workingHours: {
     monday: IOfficeHours;
     tuesday: IOfficeHours;
@@ -25,6 +34,7 @@ export interface IOffice extends Document {
     saturday: IOfficeHours;
     sunday: IOfficeHours;
   };
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,6 +62,28 @@ const officeHoursSchema = new Schema<IOfficeHours>(
     _id: false,
   }
 );
+
+const officeSocialHandleSchema =
+  new Schema<IOfficeSocialHandle>(
+    {
+      platform: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 50,
+      },
+
+      url: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 500,
+      },
+    },
+    {
+      _id: false,
+    }
+  );
 
 const officeSchema = new Schema<IOffice>(
   {
@@ -114,6 +146,21 @@ const officeSchema = new Schema<IOffice>(
       type: Number,
       min: -180,
       max: 180,
+    },
+
+    showSocialHandles: {
+      type: Boolean,
+      default: false,
+    },
+
+    socialHandles: {
+      type: [officeSocialHandleSchema],
+      default: [],
+      validate: {
+        validator: (handles: IOfficeSocialHandle[]) =>
+          handles.length <= 10,
+        message: "A maximum of 10 social handles are allowed",
+      },
     },
 
     workingHours: {

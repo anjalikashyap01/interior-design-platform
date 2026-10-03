@@ -11,7 +11,6 @@ import {
 } from "../schemas/testimonial.schema";
 import { uploadTestimonialImage } from "../services/cloudinary/testimonial-image.service";
 
-
 const validateId = (id: string) => {
   if (!Types.ObjectId.isValid(id)) {
     throw new ApiError(400, "Invalid testimonial ID");
@@ -38,7 +37,7 @@ const normalizeBody = (body: Record<string, unknown>) => {
 export const listPublicTestimonialsController =
   asyncHandler(async (_req: Request, res: Response) => {
     const testimonials = await Testimonial.find({
-      published: true,
+      status: "published",
     }).sort({ createdAt: -1 });
 
     return sendSuccess(res, {
@@ -53,23 +52,23 @@ export const listAdminTestimonialsController =
   asyncHandler(async (req: Request, res: Response) => {
     const parsed = testimonialQuerySchema.safeParse(req.query);
 
-   if (!parsed.success) {
-  console.log("TESTIMONIAL VALIDATION ERROR:");
-  console.log(parsed.error.flatten());
+    if (!parsed.success) {
+      console.log("TESTIMONIAL VALIDATION ERROR:");
+      console.log(parsed.error.flatten());
 
-  throw new ApiError(
-    400,
-    "Validation failed",
-    parsed.error.flatten()
-  );
-}
+      throw new ApiError(
+        400,
+        "Validation failed",
+        parsed.error.flatten()
+      );
+    }
 
     const { page, limit, published } = parsed.data;
 
     const filter: Record<string, unknown> = {};
 
     if (published !== undefined) {
-      filter.published = published === "true";
+      filter.status = published === "true" ? "published" : "draft";
     }
 
     const [testimonials, total] = await Promise.all([
@@ -124,6 +123,7 @@ export const createTestimonialController =
     );
 
     const parsed = createTestimonialSchema.safeParse(body);
+
     console.log("TESTIMONIAL BODY:", req.body);
 
     if (!parsed.success) {
@@ -137,21 +137,39 @@ export const createTestimonialController =
     let imageUrl = parsed.data.imageUrl;
 
     // Upload image if provided
-    if (req.file) {
-      const uploaded = await uploadTestimonialImage(req.file);
-      imageUrl = uploaded.url;
-    }
+    console.log("TESTIMONIAL FILE:", req.file);
+
+if (req.file) {
+  console.log("Uploading testimonial image...");
+
+  const uploaded = await uploadTestimonialImage(req.file);
+
+  console.log("CLOUDINARY RESULT:", uploaded);
+
+  imageUrl = uploaded.url;
+}
+
+console.log("FINAL IMAGE URL:", imageUrl);
 
     const testimonial = await Testimonial.create({
-      ...parsed.data,
-      ...(imageUrl ? { imageUrl } : {}),
-    });
+  customerName: parsed.data.customerName,
+  content: parsed.data.content,
+  rating: parsed.data.rating,
+  status: parsed.data.published
+    ? "published"
+    : "draft",
+  featured: false,
+  ...(imageUrl
+    ? {
+        imageUrl: imageUrl,
+      }
+    : {}),
+});
 
-    return sendSuccess(res, {
-      statusCode: 201,
-      message: "Testimonial created successfully",
-      data: testimonial,
-    });
+console.log(
+  "CREATED TESTIMONIAL FROM MONGOOSE:",
+  testimonial.toObject()
+);
   });
 
 // ==================== UPDATE ====================
@@ -187,13 +205,13 @@ export const updateTestimonialController =
     }
 
     const testimonial = await Testimonial.findByIdAndUpdate(
-      id,
-      { $set: updateData },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+  id,
+  { $set: updateData },
+  {
+    returnDocument: "after",
+    runValidators: true,
+  }
+);
 
     if (!testimonial) {
       throw new ApiError(404, "Testimonial not found");
@@ -234,13 +252,13 @@ export const publishTestimonialController =
     validateId(id);
 
     const testimonial = await Testimonial.findByIdAndUpdate(
-      id,
-      { $set: { published: true } },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+  id,
+  { $set: { status: "published" } },
+  {
+    returnDocument: "after",
+    runValidators: true,
+  }
+);
 
     if (!testimonial) {
       throw new ApiError(404, "Testimonial not found");
@@ -261,13 +279,13 @@ export const unpublishTestimonialController =
     validateId(id);
 
     const testimonial = await Testimonial.findByIdAndUpdate(
-      id,
-      { $set: { published: false } },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+  id,
+  { $set: { status: "draft" } },
+  {
+    returnDocument: "after",
+    runValidators: true,
+  }
+);
 
     if (!testimonial) {
       throw new ApiError(404, "Testimonial not found");

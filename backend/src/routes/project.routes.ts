@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import {
   createProjectController,
   deleteProjectController,
@@ -11,20 +12,28 @@ import {
   unpublishProjectController,
   updateProjectController,
 } from "../controllers/project.controller";
+
 import { adminAuthMiddleware } from "../middleware/admin-auth.middleware";
 import { uploadDesignImages } from "../middleware/upload.middleware";
 
 const router = Router();
 
 // Public project catalog
+
 router.get("/projects", listPublicProjectsController);
+
 router.get("/projects/:slug", getPublicProjectController);
 
 // Admin project management
+
 router.post(
   "/admin/projects",
   adminAuthMiddleware,
-  uploadDesignImages.array("images", 10),
+  uploadDesignImages.fields([
+    { name: "beforeImage", maxCount: 1 },
+    { name: "afterImage", maxCount: 1 },
+    { name: "images", maxCount: 8 },
+  ]),
   createProjectController
 );
 
@@ -43,7 +52,11 @@ router.get(
 router.patch(
   "/admin/projects/:id",
   adminAuthMiddleware,
-  uploadDesignImages.array("images", 10),
+  uploadDesignImages.fields([
+    { name: "beforeImage", maxCount: 1 },
+    { name: "afterImage", maxCount: 1 },
+    { name: "images", maxCount: 8 },
+  ]),
   updateProjectController
 );
 

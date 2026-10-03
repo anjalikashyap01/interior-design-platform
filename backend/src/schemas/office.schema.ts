@@ -20,6 +20,25 @@ const officeHoursSchema = z.object({
   closed: z.boolean(),
 });
 
+const socialHandleSchema = z.object({
+  platform: z
+    .string()
+    .trim()
+    .min(1, "Social platform is required")
+    .max(50, "Social platform is too long"),
+
+  url: z
+    .string()
+    .trim()
+    .url("Invalid social handle URL")
+    .max(500, "Social handle URL is too long"),
+});
+
+const socialHandlesSchema = z
+  .array(socialHandleSchema)
+  .max(10, "A maximum of 10 social handles are allowed")
+  .default([]);
+
 export const createOfficeSchema = z.object({
   name: z
     .string()
@@ -76,6 +95,10 @@ export const createOfficeSchema = z.object({
     .min(-180)
     .max(180)
     .optional(),
+
+  showSocialHandles: z.boolean().default(false),
+
+  socialHandles: socialHandlesSchema,
 
   workingHours: z.object({
     monday: officeHoursSchema,
