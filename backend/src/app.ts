@@ -22,9 +22,14 @@ app.use(
 );
 
 // CORS
+const allowedOrigins = [
+  env.clientUrl,
+  "http://localhost:3000",
+];
+
 app.use(
   cors({
-    origin: env.clientUrl,
+    origin: allowedOrigins,
     credentials: true,
   })
 );
