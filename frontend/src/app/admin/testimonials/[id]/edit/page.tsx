@@ -28,7 +28,7 @@ export default function EditTestimonialPage() {
   const [rating, setRating] = useState("5");
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
- const [published, setPublished] = useState<boolean>(false);
+ const [status, setStatus] = useState<"draft" | "published">("draft");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -51,7 +51,7 @@ setCustomerName(result.customerName ?? "");
 setRole(result.role ?? "");
 setRating(String(result.rating ?? 5));
 setContent(result.content ?? "");
-setPublished(result.published ?? false);
+setStatus(result.status ?? "draft");
       } catch (err) {
         setError(
           err instanceof Error
@@ -161,10 +161,7 @@ setPublished(result.published ?? false);
         content.trim()
       );
 
-      formData.append(
-        "published",
-        String(published)
-      );
+      formData.append("status", status);
 
       if (image) {
         formData.append("image", image);
@@ -355,10 +352,12 @@ setPublished(result.published ?? false);
             </p>
 
             <Image
-              src={testimonial.imageUrl}
-              alt={testimonial.customerName}
-              className="h-24 w-24 rounded-md object-cover"
-            />
+  src={testimonial.imageUrl}
+  alt={testimonial.customerName}
+  width={96}
+  height={96}
+  className="h-24 w-24 rounded-md object-cover"
+/>
           </div>
         )}
 
@@ -407,29 +406,31 @@ setPublished(result.published ?? false);
           )}
         </div>
 
-        {/* Published */}
-        <div className="rounded-md border p-4">
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              checked={published}
-              onChange={(event) =>
-                setPublished(event.target.checked)
-              }
-              className="mt-1 h-4 w-4"
-            />
+        {/* Status */}
+<div className="rounded-md border p-4">
+  <label
+    htmlFor="status"
+    className="mb-1 block text-sm font-medium"
+  >
+    Status
+  </label>
 
-            <span>
-              <span className="block text-sm font-medium">
-                Published
-              </span>
+  <select
+    id="status"
+    value={status}
+    onChange={(event) =>
+      setStatus(event.target.value as "draft" | "published")
+    }
+    className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-black"
+  >
+    <option value="draft">Draft</option>
+    <option value="published">Published</option>
+  </select>
 
-              <span className="mt-1 block text-xs text-gray-500">
-                Uncheck to keep this testimonial as a draft.
-              </span>
-            </span>
-          </label>
-        </div>
+  <p className="mt-1 text-xs text-gray-500">
+    Choose whether this testimonial is visible publicly.
+  </p>
+</div>
 
         {/* Buttons */}
         <div className="flex flex-col-reverse gap-3 border-t pt-5 sm:flex-row sm:justify-end">
