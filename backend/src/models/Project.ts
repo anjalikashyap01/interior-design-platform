@@ -1,22 +1,49 @@
-import { Schema, model, type Document } from "mongoose";
+import { Document, Model, Schema, model } from "mongoose";
 
-export type ProjectStatus = "draft" | "published";
+export interface IProjectImage {
+  url: string;
+  publicId: string;
+  alt?: string;
+}
 
 export interface IProject extends Document {
   title: string;
   slug: string;
   description: string;
-  category: string;
   location?: string;
-  budget?: string;
-  area?: string;
-  coverImage: string;
-  images: string[];
-  status: ProjectStatus;
+  category?: string;
+  style?: string;
+  images: IProjectImage[];
+  beforeImage?: IProjectImage;
+  afterImage?: IProjectImage;
+  materials: string[];
   featured: boolean;
+  published: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const imageSchema = new Schema<IProjectImage>(
+  {
+    url: {
+      type: String,
+      required: true,
+    },
+
+    publicId: {
+      type: String,
+      required: true,
+    },
+
+    alt: {
+      type: String,
+      trim: true,
+    },
+  },
+  {
+    _id: false,
+  }
+);
 
 const projectSchema = new Schema<IProject>(
   {
@@ -40,65 +67,60 @@ const projectSchema = new Schema<IProject>(
       type: String,
       required: true,
       trim: true,
-      maxlength: 5000,
-    },
-
-    category: {
-      type: String,
-      required: true,
-      trim: true,
-      index: true,
     },
 
     location: {
       type: String,
       trim: true,
-      maxlength: 150,
     },
 
-    budget: {
+    category: {
       type: String,
       trim: true,
-      maxlength: 100,
     },
 
-    area: {
+    style: {
       type: String,
-      trim: true,
-      maxlength: 100,
-    },
-
-    coverImage: {
-      type: String,
-      required: true,
       trim: true,
     },
 
     images: {
-      type: [String],
+      type: [imageSchema],
       default: [],
     },
 
-    status: {
-      type: String,
-      enum: ["draft", "published"],
-      default: "draft",
-      required: true,
-      index: true,
+    beforeImage: {
+      type: imageSchema,
+    },
+
+    afterImage: {
+      type: imageSchema,
+    },
+
+    materials: {
+      type: [String],
+      default: [],
     },
 
     featured: {
       type: Boolean,
       default: false,
-      index: true,
+    },
+
+    published: {
+      type: Boolean,
+      default: false,
     },
   },
   {
     timestamps: true,
-    collection: "projects",
+    versionKey: false,
   }
 );
 
-const Project = model<IProject>("Project", projectSchema);
+const Project: Model<IProject> = model<IProject>(
+  "Project",
+  projectSchema
+);
 
 export default Project;

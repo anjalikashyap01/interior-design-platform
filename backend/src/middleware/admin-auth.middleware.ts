@@ -69,6 +69,7 @@ export const adminAuthMiddleware = async (
 
     next();
   } catch (error) {
+    console.error("ADMIN AUTH ERROR:", error);
     next(
       error instanceof ApiError
         ? error

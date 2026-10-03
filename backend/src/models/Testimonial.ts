@@ -7,7 +7,7 @@ export interface ITestimonial extends Document {
   customerLocation?: string;
   content: string;
   rating: number;
-  customerImage?: string;
+  imageUrl?: string;
   projectId?: Schema.Types.ObjectId;
   status: TestimonialStatus;
   featured: boolean;
@@ -44,10 +44,9 @@ const testimonialSchema = new Schema<ITestimonial>(
       max: 5,
     },
 
-    customerImage: {
-      type: String,
-      trim: true,
-    },
+    imageUrl: {
+  type: String,
+},
 
     projectId: {
       type: Schema.Types.ObjectId,

@@ -1,22 +1,18 @@
-import {
-  Request,
-  Response,
-  NextFunction,
-} from "express";
+import { Request, Response, NextFunction } from "express";
+import { getAuth } from "@clerk/express";
 
 import User from "../models/User";
-import {
-  verifyCustomerToken,
-} from "../utils/jwt";
 import { ApiError } from "../utils/api-error";
 
-export interface AuthenticatedRequest
-  extends Request {
+export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
-    phone: string;
+    clerkUserId: string;
     name?: string;
     email?: string;
+    role: "customer" | "designer" | "admin";
+    status: "active" | "inactive" | "suspended";
+    isActive: boolean;
     isVerified: boolean;
   };
 }
@@ -27,55 +23,45 @@ export const authMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const authorization =
-      req.headers.authorization;
+    const { isAuthenticated, userId } = getAuth(req);
 
-    if (!authorization) {
-      throw new ApiError(
-        401,
-        "Authentication required"
-      );
+    if (!isAuthenticated || !userId) {
+      throw new ApiError(401, "Authentication required");
     }
 
-    const [scheme, token] =
-      authorization.split(" ");
-
-    if (
-      scheme !== "Bearer" ||
-      !token
-    ) {
-      throw new ApiError(
-        401,
-        "Invalid authorization header"
-      );
-    }
-
-    const payload =
-      verifyCustomerToken(token);
-
-    const user = await User.findById(
-      payload.userId
-    ).lean();
+    const user = await User.findOne({
+      clerkUserId: userId,
+    });
 
     if (!user) {
       throw new ApiError(
-        401,
-        "User no longer exists"
+        404,
+        "User profile not found"
       );
     }
 
-    if (!user.isVerified) {
+    if (!user.isActive) {
       throw new ApiError(
         403,
-        "User is not verified"
+        "User account is inactive"
+      );
+    }
+
+    if (user.status !== "active") {
+      throw new ApiError(
+        403,
+        "User account is not active"
       );
     }
 
     req.user = {
       id: user._id.toString(),
-      phone: user.phone,
+      clerkUserId: user.clerkUserId,
       name: user.name,
       email: user.email,
+      role: user.role,
+      status: user.status,
+      isActive: user.isActive,
       isVerified: user.isVerified,
     };
 
@@ -86,7 +72,7 @@ export const authMiddleware = async (
         ? error
         : new ApiError(
             401,
-            "Invalid or expired authentication token"
+            "Authentication failed"
           )
     );
   }
