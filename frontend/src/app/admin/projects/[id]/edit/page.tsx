@@ -8,14 +8,15 @@ import {
 } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { adminProjectApi, Project } from "@/lib/api";
 import Image from "next/image";
+import { adminProjectApi, Project } from "@/lib/api";
 
 export default function EditProjectPage() {
   const params = useParams();
   const router = useRouter();
 
   const rawId = params.id;
+
   const id =
     typeof rawId === "string"
       ? rawId
@@ -36,17 +37,18 @@ export default function EditProjectPage() {
   const [featured, setFeatured] = useState(false);
   const [published, setPublished] = useState(false);
 
+  const [beforeImage, setBeforeImage] = useState<File | null>(null);
+  const [afterImage, setAfterImage] = useState<File | null>(null);
   const [images, setImages] = useState<File[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Load project only when the ID is valid.
   useEffect(() => {
     if (typeof id !== "string" || !id) return;
 
-    const projectId: string = id;
+    const projectId = id;
     let cancelled = false;
 
     async function loadProject() {
@@ -67,6 +69,11 @@ export default function EditProjectPage() {
 
         setFeatured(Boolean(result.featured));
         setPublished(Boolean(result.published));
+
+        setBeforeImage(null);
+        setAfterImage(null);
+        setImages([]);
+
         setError("");
       } catch (err) {
         if (cancelled) return;
@@ -100,6 +107,24 @@ export default function EditProjectPage() {
       .replace(/-+/g, "-");
   }
 
+  function handleBeforeImageChange(
+    event: ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0] ?? null;
+
+    setError("");
+    setBeforeImage(file);
+  }
+
+  function handleAfterImageChange(
+    event: ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0] ?? null;
+
+    setError("");
+    setAfterImage(file);
+  }
+
   function handleImagesChange(
     event: ChangeEvent<HTMLInputElement>
   ) {
@@ -107,9 +132,11 @@ export default function EditProjectPage() {
       event.target.files ?? []
     );
 
-    if (files.length > 10) {
-      setError("You can upload a maximum of 10 images.");
-      setImages(files.slice(0, 10));
+    if (files.length > 8) {
+      setError(
+        "You can add a maximum of 8 gallery images at a time."
+      );
+      setImages(files.slice(0, 8));
       return;
     }
 
@@ -193,6 +220,17 @@ export default function EditProjectPage() {
       formData.append("featured", String(featured));
       formData.append("published", String(published));
 
+      // Replace Before image only when a new file is selected.
+      if (beforeImage) {
+        formData.append("beforeImage", beforeImage);
+      }
+
+      // Replace After image only when a new file is selected.
+      if (afterImage) {
+        formData.append("afterImage", afterImage);
+      }
+
+      // Add new gallery images.
       for (const image of images) {
         formData.append("images", image);
       }
@@ -215,7 +253,6 @@ export default function EditProjectPage() {
     }
   }
 
-  // Render missing-ID state directly, without setting state in an effect.
   if (typeof id !== "string" || !id) {
     return (
       <div className="mx-auto w-full max-w-4xl">
@@ -319,7 +356,9 @@ export default function EditProjectPage() {
                 required
                 minLength={3}
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) =>
+                  setTitle(e.target.value)
+                }
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-yellow-600"
               />
             </div>
@@ -454,69 +493,241 @@ export default function EditProjectPage() {
                 placeholder="Wood, Marble, Glass"
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-yellow-600"
               />
+
+              <p className="mt-1 text-xs text-gray-500">
+                Separate materials with commas.
+              </p>
             </div>
           </div>
         </section>
 
-        {/* Existing Images */}
+        {/* Transformation Images */}
         <section className="border-t border-gray-100 pt-6">
           <h2 className="text-lg font-semibold text-gray-900">
-            Existing Images
+            Transformation Images
           </h2>
 
-          {project.images.length === 0 ? (
-            <p className="mt-3 text-sm text-gray-500">
-              No images uploaded.
-            </p>
-          ) : (
-            <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {project.images.map((image) => (
-  <div
-    key={image.publicId}
-    className="overflow-hidden rounded-lg border border-gray-200"
-  >
-    <div className="relative h-40 w-full">
-      <Image
-        src={image.url}
-        alt={image.alt || project.title}
-        fill
-        sizes="(max-width: 640px) 50vw, 33vw"
-        className="object-cover"
-      />
-    </div>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage the Before and After images used for the project
+            transformation.
+          </p>
 
-    <button
-      type="button"
-      onClick={() =>
-        void handleDeleteImage(image.publicId)
-      }
-      className="w-full border-t border-gray-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50"
-    >
-      Delete Image
-    </button>
-  </div>
-))}
+          <div className="mt-5 grid gap-6 sm:grid-cols-2">
+            {/* Before */}
+            <div className="rounded-xl border border-gray-200 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    Before
+                  </h3>
+
+                  <p className="mt-1 text-xs text-gray-500">
+                    Original space
+                  </p>
+                </div>
+              </div>
+
+              {project.beforeImage ? (
+                <div className="overflow-hidden rounded-lg border border-gray-200">
+                  <div className="relative aspect-4/3 w-full">
+                    <Image
+                      src={project.beforeImage.url}
+                      alt={
+                        project.beforeImage.alt ||
+                        `${project.title} before transformation`
+                      }
+                      fill
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                      className="object-cover"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleDeleteImage(
+                        project.beforeImage!.publicId
+                      )
+                    }
+                    className="w-full border-t border-gray-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50"
+                  >
+                    Remove Before Image
+                  </button>
+                </div>
+              ) : (
+                <div className="flex aspect-4/3 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500">
+                  No Before image
+                </div>
+              )}
+
+              <div className="mt-4">
+                <label
+                  htmlFor="beforeImage"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  {project.beforeImage
+                    ? "Replace Before Image"
+                    : "Add Before Image"}
+                </label>
+
+                <input
+                  id="beforeImage"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleBeforeImageChange}
+                  className="block w-full rounded-lg border border-gray-300 p-3 text-sm"
+                />
+
+                {beforeImage && (
+                  <p className="mt-2 truncate text-xs text-gray-500">
+                    New file: {beforeImage.name}
+                  </p>
+                )}
+              </div>
             </div>
-          )}
+
+            {/* After */}
+            <div className="rounded-xl border border-gray-200 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    After
+                  </h3>
+
+                  <p className="mt-1 text-xs text-gray-500">
+                    Completed transformation
+                  </p>
+                </div>
+              </div>
+
+              {project.afterImage ? (
+                <div className="overflow-hidden rounded-lg border border-gray-200">
+                  <div className="relative aspect-4/3 w-full">
+                    <Image
+                      src={project.afterImage.url}
+                      alt={
+                        project.afterImage.alt ||
+                        `${project.title} after transformation`
+                      }
+                      fill
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                      className="object-cover"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleDeleteImage(
+                        project.afterImage!.publicId
+                      )
+                    }
+                    className="w-full border-t border-gray-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50"
+                  >
+                    Remove After Image
+                  </button>
+                </div>
+              ) : (
+                <div className="flex aspect-4/3 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500">
+                  No After image
+                </div>
+              )}
+
+              <div className="mt-4">
+                <label
+                  htmlFor="afterImage"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  {project.afterImage
+                    ? "Replace After Image"
+                    : "Add After Image"}
+                </label>
+
+                <input
+                  id="afterImage"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleAfterImageChange}
+                  className="block w-full rounded-lg border border-gray-300 p-3 text-sm"
+                />
+
+                {afterImage && (
+                  <p className="mt-2 truncate text-xs text-gray-500">
+                    New file: {afterImage.name}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </section>
 
-        {/* Add Images */}
+        {/* Gallery Images */}
         <section className="border-t border-gray-100 pt-6">
           <h2 className="text-lg font-semibold text-gray-900">
-            Add New Images
+            Gallery Images
           </h2>
 
-          <div className="mt-4">
+          <p className="mt-1 text-sm text-gray-500">
+            Additional project images beyond the Before and After
+            transformation.
+          </p>
+
+          {project.images.length === 0 ? (
+            <p className="mt-4 text-sm text-gray-500">
+              No gallery images uploaded.
+            </p>
+          ) : (
+            <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
+              {project.images.map((image) => (
+                <div
+                  key={image.publicId}
+                  className="overflow-hidden rounded-lg border border-gray-200"
+                >
+                  <div className="relative aspect-square w-full">
+                    <Image
+                      src={image.url}
+                      alt={image.alt || project.title}
+                      fill
+                      sizes="(max-width: 640px) 50vw, 33vw"
+                      className="object-cover"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleDeleteImage(
+                        image.publicId
+                      )
+                    }
+                    className="w-full border-t border-gray-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50"
+                  >
+                    Delete Image
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-6">
+            <label
+              htmlFor="images"
+              className="mb-2 block text-sm font-medium text-gray-700"
+            >
+              Add New Gallery Images
+            </label>
+
             <input
+              id="images"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               multiple
               onChange={handleImagesChange}
               className="block w-full rounded-lg border border-gray-300 p-3 text-sm"
             />
 
             <p className="mt-2 text-xs text-gray-500">
-              Maximum 10 new images per update.
+              Add up to 8 gallery images per update.
             </p>
 
             {images.length > 0 && (

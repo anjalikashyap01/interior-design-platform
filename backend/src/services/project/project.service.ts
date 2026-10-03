@@ -19,8 +19,14 @@ import {
 } from "../cloudinary/project-image.service";
 import { cleanupProjectImages } from "../cloudinary/project-image-cleanup.service";
 
+export type ProjectUploadFiles = {
+  beforeImage?: Express.Multer.File[];
+  afterImage?: Express.Multer.File[];
+  images?: Express.Multer.File[];
+};
+
 const uploadFiles = async (
-  files: Express.Multer.File[]
+  files: Express.Multer.File[] = []
 ): Promise<IProjectImage[]> => {
   const uploaded: IProjectImage[] = [];
 
@@ -37,6 +43,17 @@ const uploadFiles = async (
   }
 };
 
+const uploadSingleImage = async (
+  file: Express.Multer.File | undefined,
+  alt: string
+): Promise<IProjectImage | undefined> => {
+  if (!file) {
+    return undefined;
+  }
+
+  return uploadProjectImage(file, alt);
+};
+
 const findProjectOrThrow = async (
   id: string
 ): Promise<IProject> => {
@@ -51,9 +68,11 @@ const findProjectOrThrow = async (
 
 export const createProject = async (
   data: CreateProjectInput,
-  files: Express.Multer.File[] = []
+  files: ProjectUploadFiles = {}
 ): Promise<IProject> => {
-  const existing = await Project.findOne({ slug: data.slug });
+  const existing = await Project.findOne({
+    slug: data.slug,
+  });
 
   if (existing) {
     throw new ApiError(
@@ -62,9 +81,24 @@ export const createProject = async (
     );
   }
 
-  const images = await uploadFiles(files);
+  const uploadedGalleryImages = await uploadFiles(
+    files.images ?? []
+  );
+
+  let uploadedBeforeImage: IProjectImage | undefined;
+  let uploadedAfterImage: IProjectImage | undefined;
 
   try {
+    uploadedBeforeImage = await uploadSingleImage(
+      files.beforeImage?.[0],
+      "Before transformation"
+    );
+
+    uploadedAfterImage = await uploadSingleImage(
+      files.afterImage?.[0],
+      "After transformation"
+    );
+
     return await Project.create({
       ...data,
       category: data.category?.toLowerCase(),
@@ -72,10 +106,21 @@ export const createProject = async (
       materials: data.materials.map((item) =>
         item.toLowerCase()
       ),
-      images,
+      images: uploadedGalleryImages,
+      beforeImage: uploadedBeforeImage,
+      afterImage: uploadedAfterImage,
     });
   } catch (error) {
-    await cleanupProjectImages(images);
+    await cleanupProjectImages([
+      ...uploadedGalleryImages,
+      ...(uploadedBeforeImage
+        ? [uploadedBeforeImage]
+        : []),
+      ...(uploadedAfterImage
+        ? [uploadedAfterImage]
+        : []),
+    ]);
+
     throw error;
   }
 };
@@ -109,9 +154,24 @@ export const getProjects = async (
 
   if (query.search) {
     filter.$or = [
-      { title: { $regex: query.search, $options: "i" } },
-      { description: { $regex: query.search, $options: "i" } },
-      { location: { $regex: query.search, $options: "i" } },
+      {
+        title: {
+          $regex: query.search,
+          $options: "i",
+        },
+      },
+      {
+        description: {
+          $regex: query.search,
+          $options: "i",
+        },
+      },
+      {
+        location: {
+          $regex: query.search,
+          $options: "i",
+        },
+      },
     ];
   }
 
@@ -127,7 +187,11 @@ export const getProjects = async (
 
   return {
     items,
-    pagination: createPaginationMeta(page, limit, total),
+    pagination: createPaginationMeta(
+      page,
+      limit,
+      total
+    ),
   };
 };
 
@@ -155,7 +219,7 @@ export const getPublicProjectBySlug = async (
 export const updateProject = async (
   id: string,
   data: UpdateProjectInput,
-  files: Express.Multer.File[] = []
+  files: ProjectUploadFiles = {}
 ): Promise<IProject> => {
   const project = await findProjectOrThrow(id);
 
@@ -173,40 +237,90 @@ export const updateProject = async (
     }
   }
 
-  const uploadedImages = await uploadFiles(files);
+  const uploadedGalleryImages = await uploadFiles(
+    files.images ?? []
+  );
+
+  let uploadedBeforeImage: IProjectImage | undefined;
+  let uploadedAfterImage: IProjectImage | undefined;
+
+  const oldBeforeImage = project.beforeImage;
+  const oldAfterImage = project.afterImage;
 
   try {
+    uploadedBeforeImage = await uploadSingleImage(
+      files.beforeImage?.[0],
+      "Before transformation"
+    );
+
+    uploadedAfterImage = await uploadSingleImage(
+      files.afterImage?.[0],
+      "After transformation"
+    );
+
     const updateData: Record<string, unknown> = {
       ...data,
     };
 
     if (data.category) {
-      updateData.category = data.category.toLowerCase();
+      updateData.category =
+        data.category.toLowerCase();
     }
 
     if (data.style) {
-      updateData.style = data.style.toLowerCase();
+      updateData.style =
+        data.style.toLowerCase();
     }
 
     if (data.materials) {
-      updateData.materials = data.materials.map((item) =>
-        item.toLowerCase()
+      updateData.materials = data.materials.map(
+        (item) => item.toLowerCase()
       );
     }
 
-    if (uploadedImages.length) {
+    if (uploadedGalleryImages.length) {
       updateData.images = [
         ...project.images,
-        ...uploadedImages,
+        ...uploadedGalleryImages,
       ];
     }
 
+    if (uploadedBeforeImage) {
+      updateData.beforeImage = uploadedBeforeImage;
+    }
+
+    if (uploadedAfterImage) {
+      updateData.afterImage = uploadedAfterImage;
+    }
+
     Object.assign(project, updateData);
+
     await project.save();
+
+    if (uploadedBeforeImage && oldBeforeImage) {
+      await deleteProjectImage(
+        oldBeforeImage.publicId
+      );
+    }
+
+    if (uploadedAfterImage && oldAfterImage) {
+      await deleteProjectImage(
+        oldAfterImage.publicId
+      );
+    }
 
     return project;
   } catch (error) {
-    await cleanupProjectImages(uploadedImages);
+    await cleanupProjectImages([
+      ...uploadedGalleryImages,
+      ...(uploadedBeforeImage
+        ? [uploadedBeforeImage]
+        : []),
+      ...(uploadedAfterImage
+        ? [uploadedAfterImage]
+        : []),
+    ]);
+
     throw error;
   }
 };
@@ -218,8 +332,12 @@ export const deleteProject = async (
 
   const allImages = [
     ...project.images,
-    ...(project.beforeImage ? [project.beforeImage] : []),
-    ...(project.afterImage ? [project.afterImage] : []),
+    ...(project.beforeImage
+      ? [project.beforeImage]
+      : []),
+    ...(project.afterImage
+      ? [project.afterImage]
+      : []),
   ];
 
   await cleanupProjectImages(allImages);
@@ -260,7 +378,10 @@ export const removeProjectImage = async (
   );
 
   if (index === -1) {
-    throw new ApiError(404, "Project image not found");
+    throw new ApiError(
+      404,
+      "Project image not found"
+    );
   }
 
   const [image] = project.images.splice(index, 1);

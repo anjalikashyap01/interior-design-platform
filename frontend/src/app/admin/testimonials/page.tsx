@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -56,13 +55,14 @@ export default function AdminTestimonialsPage() {
       setActionId(testimonial._id);
       setError("");
 
-      const updated = testimonial.published
-        ? await adminTestimonialApi.unpublishTestimonial(
-            testimonial._id
-          )
-        : await adminTestimonialApi.publishTestimonial(
-            testimonial._id
-          );
+      const updated =
+        testimonial.status === "published"
+          ? await adminTestimonialApi.unpublishTestimonial(
+              testimonial._id
+            )
+          : await adminTestimonialApi.publishTestimonial(
+              testimonial._id
+            );
 
       setTestimonials((current) =>
         current.map((item) =>
@@ -80,12 +80,12 @@ export default function AdminTestimonialsPage() {
     }
   };
 
-const handleDelete = async (
-  testimonial: Testimonial
-) => {
-  const confirmed = window.confirm(
-    `Delete the testimonial from ${testimonial.customerName}?`
-  );
+  const handleDelete = async (
+    testimonial: Testimonial
+  ) => {
+    const confirmed = window.confirm(
+      `Delete the testimonial from ${testimonial.customerName}?`
+    );
 
     if (!confirmed) return;
 
@@ -191,6 +191,9 @@ const handleDelete = async (
                   Math.min(5, testimonial.rating)
                 );
 
+                const isPublished =
+                  testimonial.status === "published";
+
                 return (
                   <tr
                     key={testimonial._id}
@@ -230,12 +233,12 @@ const handleDelete = async (
                     <td className="px-4 py-4">
                       <span
                         className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                          testimonial.published
+                          isPublished
                             ? "bg-green-100 text-green-700"
                             : "bg-gray-100 text-gray-600"
                         }`}
                       >
-                        {testimonial.published
+                        {isPublished
                           ? "Published"
                           : "Draft"}
                       </span>
@@ -254,13 +257,15 @@ const handleDelete = async (
                           type="button"
                           disabled={isActionLoading}
                           onClick={() =>
-                            void handlePublishToggle(testimonial)
+                            void handlePublishToggle(
+                              testimonial
+                            )
                           }
                           className="rounded border px-3 py-1.5 text-xs hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {isActionLoading
                             ? "Please wait..."
-                            : testimonial.published
+                            : isPublished
                               ? "Unpublish"
                               : "Publish"}
                         </button>
@@ -287,4 +292,3 @@ const handleDelete = async (
     </main>
   );
 }
-

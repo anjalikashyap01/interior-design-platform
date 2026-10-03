@@ -18,14 +18,26 @@ import {
   updateProjectSchema,
 } from "../schemas/project.schema";
 
-const getFiles = (req: Express.Request): Express.Multer.File[] => {
-  if (!req.files) return [];
-  if (Array.isArray(req.files)) return req.files;
-  return Object.values(req.files).flat();
+type ProjectUploadFiles = {
+  beforeImage?: Express.Multer.File[];
+  afterImage?: Express.Multer.File[];
+  images?: Express.Multer.File[];
+};
+
+const getProjectUploadFiles = (
+  req: Express.Request
+): ProjectUploadFiles => {
+  if (!req.files || Array.isArray(req.files)) {
+    return {};
+  }
+
+  return req.files as ProjectUploadFiles;
 };
 
 export const createProjectController = asyncHandler(
   async (req, res) => {
+    console.log("PROJECT BODY:", req.body);
+    console.log("PROJECT FILES:", req.files);
     const parsed = createProjectSchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -36,7 +48,13 @@ export const createProjectController = asyncHandler(
       );
     }
 
-    const project = await createProject(parsed.data, getFiles(req));
+    const files = getProjectUploadFiles(req);
+    console.log("PROJECT FILES:", files);
+
+    const project = await createProject(
+      parsed.data,
+      files
+    );
 
     return sendSuccess(res, {
       statusCode: 201,
@@ -126,10 +144,12 @@ export const updateProjectController = asyncHandler(
       );
     }
 
+    const files = getProjectUploadFiles(req);
+
     const project = await updateProject(
       req.params.id as string,
       parsed.data,
-      getFiles(req)
+      files
     );
 
     return sendSuccess(res, {

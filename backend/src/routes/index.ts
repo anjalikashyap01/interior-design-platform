@@ -6,6 +6,7 @@ import clerkTestRoutes from "./clerk-test.routes";
 import designRoutes from "./design.routes";
 import projectRoutes from "./project.routes";
 import serviceRoutes from "./service.routes";
+import aboutRoutes from "./about.routes";
 import testimonialRoutes from "./testimonial.routes";
 import consultationRoutes from "./consultation.routes";
 import dashboardRoutes from "./dashboard.routes";
@@ -26,6 +27,8 @@ router.use("/", designRoutes);
 router.use("/", projectRoutes);
 
 router.use("/", serviceRoutes);
+
+router.use(aboutRoutes);
 
 router.use("/", testimonialRoutes);
 

@@ -109,11 +109,10 @@ export interface Testimonial {
   rating: number;
   content: string;
   imageUrl?: string;
-  published: boolean;
+  status: "draft" | "published";
   createdAt: string;
   updatedAt: string;
 }
-
 export interface TestimonialListData {
   testimonials: Testimonial[];
   pagination?: {
@@ -212,11 +211,10 @@ const getAdminHeaders = (): HeadersInit => {
 };
 
 const clearAdminToken = (): void => {
-  if (typeof window === "undefined") {
-    return;
-  }
+  if (typeof window === "undefined") return;
 
   localStorage.removeItem("adminToken");
+  window.dispatchEvent(new Event("admin-auth-changed"));
 };
 
 /* =========================================================
@@ -1062,7 +1060,213 @@ export const adminTestimonialApi = {
   },
 };
 
+/* =========================================================
+   ADMIN ABOUT API
+========================================================= */
 
+export const adminAboutApi = {
+  async getAbout(): Promise<About> {
+    const response = await fetch(
+      `${API_URL}/admin/about`,
+      {
+        method: "GET",
+        headers: getAdminHeaders(),
+        cache: "no-store",
+      }
+    );
+
+    const result =
+      await handleResponse<About>(response);
+
+    if (!result.data) {
+      throw new Error(
+        "About information not found"
+      );
+    }
+
+    return result.data;
+  },
+
+  async createAbout(
+    payload: Omit<About, "_id" | "createdAt" | "updatedAt">
+  ): Promise<About> {
+    const response = await fetch(
+      `${API_URL}/admin/about`,
+      {
+        method: "POST",
+        headers: {
+          ...getAdminHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const result =
+      await handleResponse<About>(response);
+
+    if (!result.data) {
+      throw new Error(
+        "About information creation failed"
+      );
+    }
+
+    return result.data;
+  },
+
+  async updateAbout(
+    payload: Partial<About>
+  ): Promise<About> {
+    const response = await fetch(
+      `${API_URL}/admin/about`,
+      {
+        method: "PATCH",
+        headers: {
+          ...getAdminHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const result =
+      await handleResponse<About>(response);
+
+    if (!result.data) {
+      throw new Error(
+        "About information update failed"
+      );
+    }
+
+    return result.data;
+  },
+
+  async deleteAbout(): Promise<void> {
+    const response = await fetch(
+      `${API_URL}/admin/about`,
+      {
+        method: "DELETE",
+        headers: getAdminHeaders(),
+      }
+    );
+
+    await handleResponse(response);
+  },
+
+  async uploadImages(
+    files: File[]
+  ): Promise<AboutImage[]> {
+    const formData = new FormData();
+
+    files.forEach((file) => {
+      formData.append("images", file);
+    });
+
+    const response = await fetch(
+      `${API_URL}/admin/about/images`,
+      {
+        method: "POST",
+        headers: getAdminHeaders(),
+        body: formData,
+      }
+    );
+
+    const result =
+      await handleResponse<{
+        images: AboutImage[];
+      }>(response);
+
+    if (!result.data?.images) {
+      throw new Error(
+        "About images upload failed"
+      );
+    }
+
+    return result.data.images;
+  },
+
+  async deleteImage(
+    publicId: string
+  ): Promise<About> {
+    const response = await fetch(
+      `${API_URL}/admin/about/images`,
+      {
+        method: "DELETE",
+        headers: {
+          ...getAdminHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          publicId,
+        }),
+      }
+    );
+
+    const result =
+      await handleResponse<About>(response);
+
+    if (!result.data) {
+      throw new Error(
+        "Unable to delete About image"
+      );
+    }
+
+    return result.data;
+  },
+};
+
+
+
+/* =========================================================
+   PUBLIC ABOUT API
+========================================================= */
+
+export const publicAboutApi = {
+  async getAbout(): Promise<About> {
+    const response = await fetch(
+      `${API_URL}/about`,
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
+
+    const result =
+      await handleResponse<About>(response);
+
+    if (!result.data) {
+      throw new Error(
+        "About information not found"
+      );
+    }
+
+    return result.data;
+  },
+}; 
+
+
+
+
+/* =========================================================
+   PUBLIC TESTIMONIAL API
+========================================================= */
+
+export const publicTestimonialApi = {
+  async getTestimonials(): Promise<Testimonial[]> {
+    const response = await fetch(
+      `${API_URL}/testimonials`,
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
+
+    const result =
+      await handleResponse<Testimonial[]>(response);
+
+    return result.data ?? [];
+  },
+};
 
 
 /* =========================================================
@@ -1320,6 +1524,11 @@ export interface OfficeHours {
   closed: boolean;
 }
 
+export interface OfficeSocialHandle {
+  platform: string;
+  url: string;
+}
+
 export interface Office {
   _id: string;
   name: string;
@@ -1331,6 +1540,10 @@ export interface Office {
   email?: string;
   latitude?: number;
   longitude?: number;
+
+  showSocialHandles: boolean;
+  socialHandles: OfficeSocialHandle[];
+
   workingHours: {
     monday: OfficeHours;
     tuesday: OfficeHours;
@@ -1340,10 +1553,10 @@ export interface Office {
     saturday: OfficeHours;
     sunday: OfficeHours;
   };
+
   createdAt: string;
   updatedAt: string;
 }
-
 export interface OfficePayload {
   name: string;
   address: string;
@@ -1354,6 +1567,10 @@ export interface OfficePayload {
   email?: string;
   latitude?: number;
   longitude?: number;
+
+  showSocialHandles: boolean;
+  socialHandles: OfficeSocialHandle[];
+
   workingHours: {
     monday: OfficeHours;
     tuesday: OfficeHours;
@@ -1473,5 +1690,101 @@ export const publicOfficeApi = {
     return result.data;
   },
 };
+
+/* =========================================================
+   ABOUT TYPES
+========================================================= */
+
+export interface AboutImage {
+  url: string;
+  publicId: string;
+  alt?: string;
+}
+
+export interface AboutProcessStep {
+  number: string;
+  title: string;
+  description?: string;
+}
+
+export interface AboutMaterial {
+  name: string;
+  image?: AboutImage;
+}
+
+export type AboutBrandRelationship =
+  | "used"
+  | "preferred-supplier"
+  | "certified-partner"
+  | "official-partner"
+  | "other";
+
+export interface AboutBrand {
+  name: string;
+  logo?: AboutImage;
+  category?: string;
+  website?: string;
+  relationship: AboutBrandRelationship;
+  description?: string;
+  visible: boolean;
+}
+
+export interface AboutTrustPoint {
+  title: string;
+  description: string;
+}
+
+export interface AboutFounderHighlight {
+  value: string;
+  label: string;
+}
+
+export interface About {
+  _id: string;
+
+  hero: {
+    heading: string;
+    description: string;
+    images: AboutImage[];
+  };
+
+  story: {
+    heading: string;
+    content: string;
+    image?: AboutImage;
+  };
+
+  designPhilosophy: {
+    heading: string;
+    content: string;
+  };
+
+  founder: {
+    name: string;
+    role: string;
+    bio: string;
+    photo?: AboutImage;
+    highlights: AboutFounderHighlight[];
+  };
+
+  processSteps: AboutProcessStep[];
+
+  materials: AboutMaterial[];
+
+  trustedBrands: AboutBrand[];
+
+  trustPoints: AboutTrustPoint[];
+
+  cta: {
+    heading: string;
+    description: string;
+    buttonText: string;
+    backgroundImage?: AboutImage;
+  };
+
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 

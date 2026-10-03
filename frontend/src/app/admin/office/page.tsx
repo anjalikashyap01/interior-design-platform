@@ -6,6 +6,7 @@ import {
   type Office,
   type OfficeHours,
   type OfficePayload,
+  type OfficeSocialHandle,
 } from "@/lib/api";
 
 const DAYS = [
@@ -18,6 +19,22 @@ const DAYS = [
   { key: "sunday", label: "Sunday" },
 ] as const;
 
+const SOCIAL_PLATFORMS = [
+  { value: "instagram", label: "Instagram" },
+  { value: "facebook", label: "Facebook" },
+  { value: "pinterest", label: "Pinterest" },
+  { value: "youtube", label: "YouTube" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "x", label: "X / Twitter" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "threads", label: "Threads" },
+  { value: "behance", label: "Behance" },
+  { value: "dribbble", label: "Dribbble" },
+  { value: "other", label: "Other" },
+] as const;
+
+const MAX_SOCIAL_HANDLES = 10;
+
 type DayKey = (typeof DAYS)[number]["key"];
 type OfficeForm = OfficePayload;
 
@@ -26,6 +43,11 @@ const defaultHours: OfficeHours = {
   close: "18:00",
   closed: false,
 };
+
+const createDefaultSocialHandle = (): OfficeSocialHandle => ({
+  platform: "instagram",
+  url: "",
+});
 
 const createDefaultForm = (): OfficeForm => ({
   name: "",
@@ -37,6 +59,8 @@ const createDefaultForm = (): OfficeForm => ({
   email: "",
   latitude: undefined,
   longitude: undefined,
+  showSocialHandles: false,
+  socialHandles: [],
   workingHours: {
     monday: { ...defaultHours },
     tuesday: { ...defaultHours },
@@ -83,6 +107,13 @@ export default function AdminOfficePage() {
         email: office.email ?? "",
         latitude: office.latitude,
         longitude: office.longitude,
+        showSocialHandles: office.showSocialHandles ?? false,
+        socialHandles: Array.isArray(office.socialHandles)
+          ? office.socialHandles.map((handle) => ({
+              platform: handle.platform,
+              url: handle.url,
+            }))
+          : [],
         workingHours: {
           monday: { ...office.workingHours.monday },
           tuesday: { ...office.workingHours.tuesday },
@@ -120,7 +151,10 @@ export default function AdminOfficePage() {
   }, [loadOffice]);
 
   const updateField = (
-    field: keyof Omit<OfficeForm, "workingHours">,
+    field: keyof Omit<
+      OfficeForm,
+      "workingHours" | "showSocialHandles" | "socialHandles"
+    >,
     value: string
   ) => {
     setForm((current) => ({
@@ -156,6 +190,57 @@ export default function AdminOfficePage() {
     }));
   };
 
+  const updateSocialVisibility = (value: boolean) => {
+    setForm((current) => ({
+      ...current,
+      showSocialHandles: value,
+    }));
+  };
+
+  const updateSocialHandle = (
+    index: number,
+    field: keyof OfficeSocialHandle,
+    value: string
+  ) => {
+    setForm((current) => ({
+      ...current,
+      socialHandles: current.socialHandles.map(
+        (handle, handleIndex) =>
+          handleIndex === index
+            ? {
+                ...handle,
+                [field]: value,
+              }
+            : handle
+      ),
+    }));
+  };
+
+  const addSocialHandle = () => {
+    setForm((current) => {
+      if (current.socialHandles.length >= MAX_SOCIAL_HANDLES) {
+        return current;
+      }
+
+      return {
+        ...current,
+        socialHandles: [
+          ...current.socialHandles,
+          createDefaultSocialHandle(),
+        ],
+      };
+    });
+  };
+
+  const removeSocialHandle = (index: number) => {
+    setForm((current) => ({
+      ...current,
+      socialHandles: current.socialHandles.filter(
+        (_, handleIndex) => handleIndex !== index
+      ),
+    }));
+  };
+
   const handleSubmit = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
@@ -169,11 +254,13 @@ export default function AdminOfficePage() {
       const payload: OfficePayload = {
         ...form,
         latitude:
-          form.latitude === undefined || Number.isNaN(form.latitude)
+          form.latitude === undefined ||
+          Number.isNaN(form.latitude)
             ? undefined
             : form.latitude,
         longitude:
-          form.longitude === undefined || Number.isNaN(form.longitude)
+          form.longitude === undefined ||
+          Number.isNaN(form.longitude)
             ? undefined
             : form.longitude,
       };
@@ -194,6 +281,16 @@ export default function AdminOfficePage() {
         email: savedOffice.email ?? "",
         latitude: savedOffice.latitude,
         longitude: savedOffice.longitude,
+        showSocialHandles:
+          savedOffice.showSocialHandles ?? false,
+        socialHandles: Array.isArray(
+          savedOffice.socialHandles
+        )
+          ? savedOffice.socialHandles.map((handle) => ({
+              platform: handle.platform,
+              url: handle.url,
+            }))
+          : [],
         workingHours: {
           monday: { ...savedOffice.workingHours.monday },
           tuesday: { ...savedOffice.workingHours.tuesday },
@@ -260,8 +357,8 @@ export default function AdminOfficePage() {
           </h1>
 
           <p className="mt-1 text-sm text-gray-500">
-            Manage your office address, contact information, map location,
-            and working hours.
+            Manage your office address, contact information, map
+            location, social handles, and working hours.
           </p>
         </div>
 
@@ -436,8 +533,8 @@ export default function AdminOfficePage() {
                 </h2>
 
                 <p className="mt-1 text-sm text-gray-500">
-                  Set the exact coordinates of your office. The map below
-                  shows the saved location.
+                  Set the exact coordinates of your office. The map
+                  below shows the saved location.
                 </p>
               </div>
 
@@ -537,8 +634,8 @@ export default function AdminOfficePage() {
                     </p>
 
                     <p className="mt-2 text-sm text-gray-500">
-                      Enter valid latitude and longitude coordinates to
-                      display the office location.
+                      Enter valid latitude and longitude coordinates
+                      to display the office location.
                     </p>
                   </div>
                 </div>
@@ -558,6 +655,190 @@ export default function AdminOfficePage() {
                 for navigation.
               </p>
             )}
+          </section>
+
+          {/* Social Handles */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Social Handles
+                </h2>
+
+                <p className="mt-1 max-w-2xl text-sm text-gray-500">
+                  Add the social profiles you want to display on the
+                  public website. You can add up to 10 handles.
+                </p>
+              </div>
+
+              <span className="inline-flex w-fit items-center rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600">
+                {form.socialHandles.length}/{MAX_SOCIAL_HANDLES}
+              </span>
+            </div>
+
+            {/* Visibility Toggle */}
+            <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  Show social handles on website
+                </p>
+
+                <p className="mt-1 text-xs text-gray-500">
+                  Turn this off if you want to temporarily hide all
+                  social profiles without deleting them.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.showSocialHandles}
+                onClick={() =>
+                  updateSocialVisibility(
+                    !form.showSocialHandles
+                  )
+                }
+                className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 ${
+                  form.showSocialHandles
+                    ? "bg-gray-900"
+                    : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                    form.showSocialHandles
+                      ? "translate-x-6"
+                      : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Handles */}
+            <div className="mt-6 space-y-4">
+              {form.socialHandles.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center">
+                  <p className="text-sm font-medium text-gray-700">
+                    No social handles added yet
+                  </p>
+
+                  <p className="mt-1 text-xs text-gray-500">
+                    Add your Instagram, YouTube, Pinterest, or other
+                    social profiles.
+                  </p>
+                </div>
+              ) : (
+                form.socialHandles.map((handle, index) => (
+                  <div
+                    key={`${handle.platform}-${index}`}
+                    className="rounded-2xl border border-gray-200 bg-white p-4"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm font-semibold text-gray-900">
+                        Social Handle {index + 1}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeSocialHandle(index)
+                        }
+                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50"
+                      >
+                        Remove
+                      </button>
+                    </div>
+
+                    <div className="mt-4 grid gap-4 md:grid-cols-[220px_1fr]">
+                      <div>
+                        <label
+                          htmlFor={`social-platform-${index}`}
+                          className="mb-2 block text-xs font-medium text-gray-500"
+                        >
+                          Platform
+                        </label>
+
+                        <select
+                          id={`social-platform-${index}`}
+                          value={handle.platform}
+                          onChange={(event) =>
+                            updateSocialHandle(
+                              index,
+                              "platform",
+                              event.target.value
+                            )
+                          }
+                          className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm outline-none focus:border-gray-900"
+                        >
+                          {SOCIAL_PLATFORMS.map(
+                            (platform) => (
+                              <option
+                                key={platform.value}
+                                value={platform.value}
+                              >
+                                {platform.label}
+                              </option>
+                            )
+                          )}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor={`social-url-${index}`}
+                          className="mb-2 block text-xs font-medium text-gray-500"
+                        >
+                          Profile URL
+                        </label>
+
+                        <input
+                          id={`social-url-${index}`}
+                          type="url"
+                          value={handle.url}
+                          onChange={(event) =>
+                            updateSocialHandle(
+                              index,
+                              "url",
+                              event.target.value
+                            )
+                          }
+                          placeholder="https://instagram.com/yourstudio"
+                          className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Add Handle */}
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-gray-500">
+                {form.socialHandles.length >=
+                MAX_SOCIAL_HANDLES
+                  ? "You have reached the maximum of 10 social handles."
+                  : `${MAX_SOCIAL_HANDLES - form.socialHandles.length} handle${
+                      MAX_SOCIAL_HANDLES -
+                        form.socialHandles.length ===
+                      1
+                        ? ""
+                        : "s"
+                    } remaining.`}
+              </p>
+
+              <button
+                type="button"
+                onClick={addSocialHandle}
+                disabled={
+                  form.socialHandles.length >=
+                  MAX_SOCIAL_HANDLES
+                }
+                className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-800 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                + Add Social Handle
+              </button>
+            </div>
           </section>
 
           {/* Working Hours */}

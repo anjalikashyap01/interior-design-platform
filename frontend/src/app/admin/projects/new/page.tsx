@@ -17,6 +17,9 @@ export default function NewProjectPage() {
   const [materials, setMaterials] = useState("");
   const [featured, setFeatured] = useState(false);
   const [published, setPublished] = useState(false);
+
+  const [beforeImage, setBeforeImage] = useState<File | null>(null);
+  const [afterImage, setAfterImage] = useState<File | null>(null);
   const [images, setImages] = useState<File[]>([]);
 
   const [loading, setLoading] = useState(false);
@@ -39,14 +42,44 @@ export default function NewProjectPage() {
     }
   }
 
+  function handleBeforeImageChange(
+    event: ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0] ?? null;
+
+    setError("");
+
+    if (!file) {
+      setBeforeImage(null);
+      return;
+    }
+
+    setBeforeImage(file);
+  }
+
+  function handleAfterImageChange(
+    event: ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0] ?? null;
+
+    setError("");
+
+    if (!file) {
+      setAfterImage(null);
+      return;
+    }
+
+    setAfterImage(file);
+  }
+
   function handleImagesChange(
     event: ChangeEvent<HTMLInputElement>
   ) {
     const files = Array.from(event.target.files ?? []);
 
-    if (files.length > 10) {
-      setError("You can upload a maximum of 10 images.");
-      setImages(files.slice(0, 10));
+    if (files.length > 8) {
+      setError("You can upload a maximum of 8 gallery images.");
+      setImages(files.slice(0, 8));
       return;
     }
 
@@ -61,8 +94,18 @@ export default function NewProjectPage() {
 
     setError("");
 
-    if (images.length > 10) {
-      setError("You can upload a maximum of 10 images.");
+    if (!beforeImage) {
+      setError("Please select a before image.");
+      return;
+    }
+
+    if (!afterImage) {
+      setError("Please select an after image.");
+      return;
+    }
+
+    if (images.length > 8) {
+      setError("You can upload a maximum of 8 gallery images.");
       return;
     }
 
@@ -100,6 +143,11 @@ export default function NewProjectPage() {
       formData.append("featured", String(featured));
       formData.append("published", String(published));
 
+      // Transformation images
+      formData.append("beforeImage", beforeImage);
+      formData.append("afterImage", afterImage);
+
+      // Optional gallery images
       for (const image of images) {
         formData.append("images", image);
       }
@@ -323,10 +371,73 @@ export default function NewProjectPage() {
           </div>
         </section>
 
-        {/* Images */}
+        {/* Transformation Images */}
         <section className="border-t border-gray-100 pt-6">
           <h2 className="text-lg font-semibold text-gray-900">
-            Project Images
+            Transformation Images
+          </h2>
+
+          <p className="mt-1 text-sm text-gray-500">
+            Upload the original space and the completed transformation.
+          </p>
+
+          <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            {/* Before Image */}
+            <div>
+              <label
+                htmlFor="beforeImage"
+                className="mb-2 block text-sm font-medium text-gray-700"
+              >
+                Before Image *
+              </label>
+
+              <input
+                id="beforeImage"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                required
+                onChange={handleBeforeImageChange}
+                className="block w-full rounded-lg border border-gray-300 p-3 text-sm"
+              />
+
+              {beforeImage && (
+                <p className="mt-2 truncate text-xs text-gray-500">
+                  Selected: {beforeImage.name}
+                </p>
+              )}
+            </div>
+
+            {/* After Image */}
+            <div>
+              <label
+                htmlFor="afterImage"
+                className="mb-2 block text-sm font-medium text-gray-700"
+              >
+                After Image *
+              </label>
+
+              <input
+                id="afterImage"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                required
+                onChange={handleAfterImageChange}
+                className="block w-full rounded-lg border border-gray-300 p-3 text-sm"
+              />
+
+              {afterImage && (
+                <p className="mt-2 truncate text-xs text-gray-500">
+                  Selected: {afterImage.name}
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Gallery Images */}
+        <section className="border-t border-gray-100 pt-6">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Gallery Images
           </h2>
 
           <div className="mt-4">
@@ -334,20 +445,20 @@ export default function NewProjectPage() {
               htmlFor="images"
               className="mb-2 block text-sm font-medium text-gray-700"
             >
-              Images
+              Additional Images
             </label>
 
             <input
               id="images"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               multiple
               onChange={handleImagesChange}
               className="block w-full rounded-lg border border-gray-300 p-3 text-sm"
             />
 
             <p className="mt-2 text-xs text-gray-500">
-              Maximum 10 images.
+              Optional. Maximum 8 additional images.
             </p>
 
             {images.length > 0 && (
