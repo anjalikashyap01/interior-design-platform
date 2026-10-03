@@ -352,6 +352,14 @@ export default function HomePage() {
             >
               Contact
             </a>
+
+            <Link
+  href="/admin/login"
+  className="text-[10px] uppercase tracking-[0.2em] text-[#F3E7D0]/90 transition hover:text-[#FFFFFF]"
+>
+  Admin
+</Link>
+
           </nav>
 
           <div className="flex items-center gap-3">
@@ -496,6 +504,14 @@ export default function HomePage() {
             >
               Contact
             </a>
+
+            <Link
+  href="/admin/login"
+  onClick={() => setMobileMenuOpen(false)}
+  className="text-3xl text-[#F3E7D0]"
+>
+  Admin
+</Link>
           </nav>
 
           <Link
