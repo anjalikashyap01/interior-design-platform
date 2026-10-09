@@ -23,7 +23,7 @@ app.use(
 
 // CORS
 const allowedOrigins = [
-  env.clientUrl,
+  "https://interior-design-platform-eight.vercel.app",
   "http://localhost:3000",
 ];
 
@@ -31,6 +31,8 @@ app.use(
   cors({
     origin: allowedOrigins,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
