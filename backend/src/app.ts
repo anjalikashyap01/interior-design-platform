@@ -23,6 +23,7 @@ app.use(
 
 // CORS
 const allowedOrigins = [
+  "https://nook-and-form-ten.vercel.app",
   "https://interior-design-platform-eight.vercel.app",
   "http://localhost:3000",
 ];
