@@ -9,6 +9,7 @@ import apiRoutes from "./routes";
 import { clerkMiddleware } from "@clerk/express";
 
 const app = express();
+app.set("trust proxy", 1);
 
 app.disable("x-powered-by");
 
