@@ -330,7 +330,7 @@ export default function DesignDetailPage() {
           The right information panel below retains its
           existing independent scrolling.
       ====================================================== */}
-      <div className="mx-auto flex h-screen max-w-[1800px] flex-col px-3 pt-20 sm:px-5 lg:px-8">
+      <div className="mx-auto flex min-h-screen max-w-[1800px] flex-col px-3 pt-20 sm:px-5 lg:h-screen lg:px-8">
         {/* Back link */}
         <div className="flex h-14 shrink-0 items-center">
           <Link
@@ -407,7 +407,7 @@ export default function DesignDetailPage() {
               DO NOT REMOVE overflow-y-auto.
               This remains independently scrollable.
           ================================================== */}
-          <div className="min-h-0 overflow-y-auto overscroll-contain pr-1 lg:scrollbar-thin">
+          <div className="min-h-0 overflow-visible pr-1 lg:overflow-y-auto lg:overscroll-contain lg:scrollbar-thin">
             <div className="space-y-5 pb-5">
               {/* PROJECT INTRO */}
               <section className="rounded-4xl border border-[#D6C8AF] bg-[#F3E7D0] p-7 sm:p-9">

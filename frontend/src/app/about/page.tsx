@@ -21,6 +21,7 @@ export default function AboutPage() {
   const [about, setAbout] = useState<About | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   /* =======================================================
      FULL PAGE SCROLL BEHAVIOUR
@@ -260,73 +261,49 @@ export default function AboutPage() {
     >
 
       <header className="fixed left-0 right-0 top-0 z-100 border-b border-[#F3E7D0]/15 bg-[#0B1F3A] shadow-[0_8px_30px_rgba(11,31,58,0.12)]">
-  <div className="mx-auto flex h-19 max-w-[1600px] items-center justify-between px-5 sm:px-8 lg:px-12">
-    <Link href="/" className="group shrink-0">
-      <p className="text-2xl font-medium leading-none tracking-[0.24em] text-[#F3E7D0] sm:text-[28px]">
-        STUDIO
-      </p>
-
-      <p className="mt-2 text-[8px] uppercase tracking-[0.34em] text-[#DCC9AA]">
-        Interior Design
-      </p>
-    </Link>
-
-    <nav className="hidden items-center gap-8 lg:flex">
-      <Link
-        href="/"
-        className="text-[10px] uppercase tracking-[0.2em] text-[#F3E7D0]/90 transition hover:text-white"
-      >
-        Home
-      </Link>
-
-      <Link
-        href="/designs"
-        className="text-[10px] uppercase tracking-[0.2em] text-[#F3E7D0]/90 transition hover:text-white"
-      >
-        Designs
-      </Link>
-
-      <Link
-        href="/services"
-        className="text-[10px] uppercase tracking-[0.2em] text-[#F3E7D0]/90 transition hover:text-white"
-      >
-        Services
-      </Link>
-
-      <Link
-        href="/#portfolio"
-        className="text-[10px] uppercase tracking-[0.2em] text-[#F3E7D0]/90 transition hover:text-white"
-      >
-        Projects
-      </Link>
-
-      <Link
-        href="/about"
-        className="text-[10px] uppercase tracking-[0.2em] text-white"
-      >
-        About
-      </Link>
-
-      <Link
-        href="/#contact"
-        className="text-[10px] uppercase tracking-[0.2em] text-[#F3E7D0]/90 transition hover:text-white"
-      >
-        Contact
-      </Link>
-    </nav>
-
-    <Link
-      href="/consultation"
-      className="inline-flex items-center rounded-full bg-[#F3E7D0] px-6 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#0B1F3A] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-white"
-    >
-      Book a Consultation
-      <span className="ml-2 text-sm leading-none">→</span>
-    </Link>
-  </div>
-</header>
-
-
-      <HeroSection about={about} />
+        <div className="mx-auto flex h-19 max-w-[1600px] items-center justify-between px-4 sm:px-8 lg:px-12">
+          <Link href="/" className="group min-w-0 shrink-0" onClick={() => setMobileMenuOpen(false)}>
+            <p className="text-xl font-medium leading-none tracking-[0.2em] text-[#F3E7D0] sm:text-[28px] sm:tracking-[0.24em]">STUDIO</p>
+            <p className="mt-1.5 text-[7px] uppercase tracking-[0.28em] text-[#DCC9AA] sm:mt-2 sm:text-[8px] sm:tracking-[0.34em]">Interior Design</p>
+          </Link>
+          <nav className="hidden items-center gap-8 lg:flex">
+            <Link href="/" className="text-[10px] uppercase tracking-[0.2em] text-[#F3E7D0]/90 transition hover:text-white">Home</Link>
+            <Link href="/designs" className="text-[10px] uppercase tracking-[0.2em] text-[#F3E7D0]/90 transition hover:text-white">Designs</Link>
+            <Link href="/services" className="text-[10px] uppercase tracking-[0.2em] text-[#F3E7D0]/90 transition hover:text-white">Services</Link>
+            <Link href="/#portfolio" className="text-[10px] uppercase tracking-[0.2em] text-[#F3E7D0]/90 transition hover:text-white">Projects</Link>
+            <Link href="/about" className="text-[10px] uppercase tracking-[0.2em] text-white">About</Link>
+            <Link href="/#contact" className="text-[10px] uppercase tracking-[0.2em] text-[#F3E7D0]/90 transition hover:text-white">Contact</Link>
+          </nav>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <Link href="/consultation" className="hidden items-center rounded-full bg-[#F3E7D0] px-6 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#0B1F3A] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-white sm:inline-flex">
+              Book a Consultation <span className="ml-2 text-sm leading-none">→</span>
+            </Link>
+            <button type="button" aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={mobileMenuOpen} aria-controls="about-mobile-navigation" onClick={() => setMobileMenuOpen((open) => !open)} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#F3E7D0]/35 text-[#F3E7D0] transition hover:bg-white/10 lg:hidden">
+              <span className="sr-only">Toggle navigation</span>
+              <span className="flex w-4.5 flex-col gap-1.25">
+                <span className={`h-px w-full bg-current transition-transform ${mobileMenuOpen ? "translate-y-0.75 rotate-45" : ""}`} />
+                <span className={`h-px w-full bg-current transition-opacity ${mobileMenuOpen ? "opacity-0" : "opacity-100"}`} />
+                <span className={`h-px w-full bg-current transition-transform ${mobileMenuOpen ? "-translate-y-2.25 -rotate-45" : ""}`} />
+              </span>
+            </button>
+          </div>
+        </div>
+        {mobileMenuOpen && (
+          <nav id="about-mobile-navigation" className="border-t border-[#F3E7D0]/15 bg-[#0B1F3A] px-5 pb-5 pt-3 shadow-xl lg:hidden">
+            <div className="mx-auto flex max-w-[1600px] flex-col">
+              {[
+                ["Home", "/"], ["Designs", "/designs"], ["Services", "/services"],
+                ["Projects", "/#portfolio"], ["About", "/about"], ["Contact", "/#contact"],
+              ].map(([label, href]) => (
+                <Link key={label} href={href} onClick={() => setMobileMenuOpen(false)} className={`border-b border-[#F3E7D0]/10 py-3 text-[11px] font-medium uppercase tracking-[0.2em] ${label === "About" ? "text-white" : "text-[#F3E7D0]/85"}`}>
+                  {label}
+                </Link>
+              ))}
+              <Link href="/consultation" onClick={() => setMobileMenuOpen(false)} className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-[#F3E7D0] px-5 py-3.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#0B1F3A]">Book a Consultation →</Link>
+            </div>
+          </nav>
+        )}
+      </header>      <HeroSection about={about} />
 
       <StorySection about={about} />
 
@@ -359,7 +336,7 @@ function HeroSection({
   const images = about.hero.images ?? [];
 
   return (
-    <section className="relative overflow-hidden bg-[#FFF7E8] px-5 pb-16 pt-10 sm:px-8 sm:pb-20 sm:pt-12 lg:px-12 lg:pb-24 lg:pt-14">
+    <section className="relative overflow-hidden bg-[#FFF7E8] px-4 pb-14 pt-28 sm:px-8 sm:pb-20 sm:pt-32 lg:px-12 lg:pb-24 lg:pt-36">
       <div className="mx-auto max-w-[1600px]">
         <div className="grid items-center gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14">
           {/* LEFT */}
@@ -370,7 +347,7 @@ function HeroSection({
             </p>
 
             <h1
-              className="text-[clamp(3.8rem,7vw,7.2rem)] font-normal leading-[0.82] tracking-[-0.04em] text-[#0B1F3A]"
+              className="text-[clamp(2.8rem,12vw,7.2rem)] font-normal leading-[0.88] tracking-[-0.04em] text-[#0B1F3A] sm:text-[clamp(3.8rem,7vw,7.2rem)]"
               style={{
                 fontFamily:
                   "'Cormorant Garamond', serif",
@@ -447,7 +424,7 @@ function HeroImageComposition({
   }
 
   return (
-    <div className="relative h-105 sm:h-125 lg:h-140">
+    <div className="relative h-85 min-w-0 sm:h-125 lg:h-140">
       {/* MAIN IMAGE */}
 
       <div className="absolute right-0 top-0 w-[76%] overflow-hidden rounded-4xl border border-[#D6C8AF] shadow-[0_18px_45px_rgba(11,31,58,0.08)]">

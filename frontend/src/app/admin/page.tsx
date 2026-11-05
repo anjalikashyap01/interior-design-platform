@@ -123,7 +123,7 @@ export default function AdminDashboardPage() {
       const response = await fetch(
         `${
           process.env.NEXT_PUBLIC_API_URL ||
-          "http://localhost:5000/api"
+          "https://interior-design-platform-u1fg.onrender.com/api"
         }/admin/consultations/${consultationId}`,
         {
           method: "PATCH",

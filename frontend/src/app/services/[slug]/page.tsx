@@ -316,7 +316,7 @@ export default function ServiceDetailPage() {
           - Right information panel keeps its own scroll.
       ====================================================== */}
 
-      <div className="mx-auto flex h-screen max-w-[1800px] flex-col px-3 pt-20 sm:px-5 lg:px-8">
+      <div className="mx-auto flex min-h-screen max-w-[1800px] flex-col px-3 pt-20 sm:px-5 lg:h-screen lg:px-8">
         {/* Back link */}
 
         <div className="flex h-14 shrink-0 items-center">
@@ -404,7 +404,7 @@ export default function ServiceDetailPage() {
               KEEP THIS SCROLL EXACTLY AS IT IS.
           ================================================== */}
 
-          <div className="min-h-0 overflow-y-auto overscroll-contain pr-1 lg:scrollbar-thin">
+          <div className="min-h-0 overflow-visible pr-1 lg:overflow-y-auto lg:overscroll-contain lg:scrollbar-thin">
             <div className="space-y-5 pb-5">
               {/* =================================================
                   SERVICE INTRO

@@ -97,7 +97,9 @@ const PROJECT_AFTER_IMAGE = "/images/projects/project-after.jpg";
 
 export default function HomePage() {
   const [office, setOffice] = useState<Office | null>(null);
+  const [officeLoading, setOfficeLoading] = useState(true);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(true);
   const [testimonialPage, setTestimonialPage] = useState(0);
   const [activeScene, setActiveScene] = useState(0);
   const [activeServiceScenes, setActiveServiceScenes] = useState([
@@ -177,8 +179,11 @@ export default function HomePage() {
       try {
         const data = await publicOfficeApi.getOffice();
         setOffice(data);
-      } catch {
+      } catch (error) {
+        console.error("FAILED TO LOAD OFFICE:", error);
         setOffice(null);
+      } finally {
+        setOfficeLoading(false);
       }
     };
 
@@ -204,6 +209,8 @@ export default function HomePage() {
       );
 
       setTestimonials([]);
+    } finally {
+      setTestimonialsLoading(false);
     }
   };
 
@@ -526,11 +533,11 @@ export default function HomePage() {
           </Link>
 
           <div className="absolute bottom-8 left-7 right-7 border-t border-[#F3E7D0]/15 pt-6">
-            <p className="text-[9px] uppercase tracking-[0.25em] text-[#DCC9AA]">
+            <p className="hidden text-[9px] uppercase tracking-[0.25em] text-[#DCC9AA] sm:block">
               Interior Design Studio
             </p>
 
-            <p className="mt-2 text-sm leading-6 text-[#F3E7D0]/60">
+            <p className="hidden text-[9px] uppercase tracking-[0.25em] text-[#DCC9AA] sm:block">
               Thoughtful spaces designed around the way you live.
             </p>
           </div>
@@ -546,7 +553,7 @@ export default function HomePage() {
         className="min-h-screen bg-[#FFF7E8] pt-19"
       >
         <div className="grid min-h-[calc(100vh-76px)] w-full lg:grid-cols-[40%_60%]">
-          <div className="relative z-10 flex min-h-[calc(100vh-76px)] items-center overflow-hidden px-6 py-14 sm:px-10 lg:px-10 xl:px-12">
+          <div className="relative z-10 flex min-h-[calc(100vh-76px)] items-center overflow-hidden px-4 py-10 sm:px-10 sm:py-14 lg:px-10 xl:px-12">
             <Image
               src="/images/home-tour/hero-left-living-room.jpg"
               alt=""
@@ -567,7 +574,7 @@ export default function HomePage() {
 
               <h1 className="text-[#0B1F3A]">
                 <span
-                  className="block text-[clamp(112px,10.8vw,178px)] font-semibold leading-[0.72] tracking-[-0.045em]"
+                  className="block text-[clamp(4.25rem,18vw,7rem)] font-semibold leading-[0.78] tracking-[-0.045em] sm:text-[clamp(112px,10.8vw,178px)] sm:leading-[0.72]"
                   style={{
                     fontFamily: "'Cormorant Garamond', serif",
                   }}
@@ -576,7 +583,7 @@ export default function HomePage() {
                 </span>
 
                 <span
-                  className="ml-[28%] mt-1 block text-[clamp(64px,6vw,98px)] font-normal leading-[0.86]"
+                  className="ml-[22%] mt-1 block text-[clamp(3rem,12vw,5rem)] font-normal leading-[0.86] sm:ml-[28%] sm:text-[clamp(64px,6vw,98px)]"
                   style={{
                     fontFamily: "'Great Vibes', cursive",
                   }}
@@ -585,7 +592,7 @@ export default function HomePage() {
                 </span>
 
                 <span
-                  className="ml-[1%] block text-[clamp(120px,11.2vw,184px)] font-normal leading-[0.65]"
+                  className="ml-[1%] block text-[clamp(4.1rem,18vw,7rem)] font-normal leading-[0.76] sm:text-[clamp(120px,11.2vw,184px)] sm:leading-[0.65]"
                   style={{
                     fontFamily: "'Great Vibes', cursive",
                   }}
@@ -594,7 +601,7 @@ export default function HomePage() {
                 </span>
 
                 <span
-                  className="ml-[32%] block text-[clamp(116px,10.6vw,176px)] font-normal leading-[0.67]"
+                  className="ml-[27%] block text-[clamp(4rem,17vw,6.75rem)] font-normal leading-[0.78] sm:ml-[32%] sm:text-[clamp(116px,10.6vw,176px)] sm:leading-[0.67]"
                   style={{
                     fontFamily: "'Great Vibes', cursive",
                   }}
@@ -603,7 +610,7 @@ export default function HomePage() {
                 </span>
               </h1>
 
-              <p className="mt-8 max-w-90 text-[23px] font-bold leading-8 text-[#071A30] sm:text-[26px] sm:leading-9">
+              <p className="mt-6 max-w-90 text-[17px] font-bold leading-6 text-[#071A30] sm:mt-8 sm:text-[26px] sm:leading-9">
                 Discover curated spaces and bespoke design made to tell your
                 story.
               </p>
@@ -622,7 +629,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="relative min-h-180 overflow-hidden bg-[#E8D6C1] lg:min-h-[calc(100vh-76px)]">
+          <div className="relative min-h-140 overflow-hidden bg-[#E8D6C1] sm:min-h-180 lg:min-h-[calc(100vh-76px)]">
             <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
               <Image
                 src="/images/home-tour/backgrounds/new-bg-3.jpg"
@@ -871,7 +878,7 @@ export default function HomePage() {
           {/* SECTION INTRO */}
           <div>
             <h2
-              className="whitespace-nowrap text-[clamp(2.8rem,5vw,5.5rem)] font-normal leading-[0.86] tracking-[-0.035em] text-[#0B1F3A]"
+              className="text-[clamp(2.35rem,10vw,5.5rem)] font-normal leading-[0.9] tracking-[-0.035em] text-[#0B1F3A] sm:whitespace-nowrap sm:text-[clamp(2.8rem,5vw,5.5rem)] sm:leading-[0.86]"
               style={{
                 fontFamily: "'Cormorant Garamond', serif",
               }}
@@ -953,7 +960,20 @@ export default function HomePage() {
           </div>
 
           {/* REVIEW CARDS */}
-          {testimonials.length === 0 ? (
+          {testimonialsLoading ? (
+            <div
+              className="mx-auto mt-9 max-w-2xl rounded-[1.45rem] border border-[#D8C9AF]/65 bg-[#FFFDF8] px-7 py-10 text-center shadow-[0_18px_45px_rgba(11,31,58,0.05)]"
+              role="status"
+              aria-live="polite"
+            >
+              <p
+                className="text-2xl text-[#0B1F3A]"
+                style={{ fontFamily: "'Cormorant Garamond', serif" }}
+              >
+                Loading client stories...
+              </p>
+            </div>
+          ) : testimonials.length === 0 ? (
             <div className="mx-auto mt-9 max-w-2xl rounded-[1.45rem] border border-[#D8C9AF]/65 bg-[#FFFDF8] px-7 py-10 text-center shadow-[0_18px_45px_rgba(11,31,58,0.05)]">
               <p
                 className="text-2xl text-[#0B1F3A]"
@@ -1116,7 +1136,7 @@ export default function HomePage() {
   id="contact"
   className="scroll-mt-19 border-t border-[#F3E7D0]/10 bg-[#0B1F3A] text-[#FFF7E8]"
 >
-  <div className="mx-auto max-w-[1600px] px-6 py-16 sm:px-10 sm:py-20 lg:px-16 lg:py-20">
+  <div className="mx-auto max-w-[1600px] px-4 py-12 sm:px-10 sm:py-20 lg:px-16 lg:py-20">
 
     <div className="grid gap-10 border-b border-[#F3E7D0]/10 pb-12 lg:grid-cols-[1.05fr_0.9fr_1fr] lg:items-end lg:gap-14">
 
@@ -1216,8 +1236,10 @@ export default function HomePage() {
                 Studio location
               </p>
 
-              <p className="mt-2 text-xs text-[#FFF7E8]/50">
-                Location information will appear here.
+              <p className="mt-2 text-xs text-[#FFF7E8]/50" role="status" aria-live="polite">
+                {officeLoading
+                  ? "Loading studio location..."
+                  : "Location information will appear here."}
               </p>
             </div>
           </div>
@@ -1234,7 +1256,7 @@ export default function HomePage() {
 ===================================================== */}
 
 <footer className="border-t border-[#F3E7D0]/10 bg-[#0B1F3A] text-[#FFF7E8]">
-  <div className="mx-auto max-w-[1600px] px-6 py-12 sm:px-10 lg:px-16 lg:py-14">
+  <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-10 sm:py-12 lg:px-16 lg:py-14">
 
     <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-[1.25fr_0.75fr_0.85fr_1fr]">
 
@@ -1476,7 +1498,7 @@ export default function HomePage() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Chat with us on WhatsApp"
-          className="group fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_10px_30px_rgba(11,31,58,0.22)] transition-all duration-300 hover:-translate-y-1 hover:scale-105 hover:shadow-[0_14px_35px_rgba(11,31,58,0.28)] sm:bottom-7 sm:right-7"
+          className="group fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] sm:bottom-7 sm:right-7 sm:h-14 sm:w-14 text-white shadow-[0_10px_30px_rgba(11,31,58,0.22)] transition-all duration-300 hover:-translate-y-1 hover:scale-105 hover:shadow-[0_14px_35px_rgba(11,31,58,0.28)]"
         >
           <svg
             viewBox="0 0 32 32"
@@ -1627,11 +1649,11 @@ function ProjectComparison({
         </div>
 
         {/* LABELS */}
-        <div className="absolute left-5 top-5 z-20 rounded-full bg-[#0B1F3A]/92 px-5 py-2.5 text-[9px] font-semibold uppercase tracking-[0.26em] text-[#FFF7E8] sm:left-7 sm:top-7">
+        <div className="absolute left-2 top-2 z-20 rounded-full bg-[#0B1F3A]/92 px-3 py-2 sm:left-7 sm:top-7 sm:px-5 sm:py-2.5 text-[9px] font-semibold uppercase tracking-[0.26em] text-[#FFF7E8]">
           Before
         </div>
 
-        <div className="absolute right-5 top-5 z-20 rounded-full bg-[#FFF7E8]/95 px-5 py-2.5 text-[9px] font-semibold uppercase tracking-[0.26em] text-[#0B1F3A] shadow-sm sm:right-7 sm:top-7">
+        <div className="absolute right-2 top-2 z-20 rounded-full bg-[#FFF7E8]/95 px-3 py-2 sm:right-7 sm:top-7 sm:px-5 sm:py-2.5 text-[9px] font-semibold uppercase tracking-[0.26em] text-[#0B1F3A] shadow-sm">
           After
         </div>
 
@@ -1639,7 +1661,7 @@ function ProjectComparison({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20">
           <div className="absolute inset-x-0 bottom-0 h-44 bg-linear-to-t from-[#0B1F3A]/90 via-[#0B1F3A]/30 to-transparent" />
 
-          <div className="relative px-6 pb-6 pt-16 sm:px-8 sm:pb-8">
+          <div className="relative px-4 pb-4 pt-14 sm:px-8 sm:pb-8">
             <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[#E3C98B]">
               {project.category || "Interior Design"}
             </p>

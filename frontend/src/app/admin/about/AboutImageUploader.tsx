@@ -1,104 +1,68 @@
 "use client";
 
 import { useId, useState } from "react";
-
-import {
-  adminAboutApi,
-  type AboutImage,
-} from "@/lib/api";
+import Image from "next/image";
+import { adminAboutApi, type AboutImage } from "@/lib/api";
 
 interface AboutImageUploaderProps {
   label: string;
-  images: AboutImage[];
+  images?: AboutImage[];
   multiple?: boolean;
   maxImages?: number;
   onImagesChange: (images: AboutImage[]) => void;
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-const ACCEPTED_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
+const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export default function AboutImageUploader({
   label,
-  images,
+  images: incomingImages,
   multiple = false,
   maxImages = 1,
   onImagesChange,
 }: AboutImageUploaderProps) {
+  // Keep one safe array for all rendering and update operations.
+  const images: AboutImage[] = Array.isArray(incomingImages)
+    ? incomingImages
+    : [];
+
   const [uploading, setUploading] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(
-    null
-  );
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const generatedId = useId();
-
   const inputId = `about-image-upload-${generatedId}`;
 
   const handleSelectFiles = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const files = Array.from(event.target.files ?? []);
+    const input = event.currentTarget;
+    const files = Array.from(input.files ?? []);
 
-    if (files.length === 0) {
-      return;
-    }
-
+    if (files.length === 0) return;
     setError("");
 
-    /* =========================================================
-       FILE TYPE VALIDATION
-    ========================================================= */
-
-    const invalidFile = files.find(
-      (file) => !ACCEPTED_TYPES.has(file.type)
-    );
-
+    const invalidFile = files.find((file) => !ACCEPTED_TYPES.has(file.type));
     if (invalidFile) {
       setError(
-        `"${invalidFile.name}" is not a supported image. Please use JPG, PNG or WEBP.`
+        `"${invalidFile.name}" is not supported. Please use JPG, PNG or WEBP.`
       );
-
-      event.target.value = "";
+      input.value = "";
       return;
     }
 
-    /* =========================================================
-       FILE SIZE VALIDATION
-    ========================================================= */
-
-    const oversizedFile = files.find(
-      (file) => file.size > MAX_FILE_SIZE
-    );
-
+    const oversizedFile = files.find((file) => file.size > MAX_FILE_SIZE);
     if (oversizedFile) {
-      setError(
-        `"${oversizedFile.name}" is larger than 10MB. Please choose a smaller image.`
-      );
-
-      event.target.value = "";
+      setError(`"${oversizedFile.name}" is larger than 10MB.`);
+      input.value = "";
       return;
     }
 
-    /* =========================================================
-       AVAILABLE SLOTS
-    ========================================================= */
-
-    const availableSlots = multiple
-      ? maxImages - images.length
-      : 1;
-
+    const availableSlots = multiple ? maxImages - images.length : 1;
     if (multiple && availableSlots <= 0) {
-      setError(
-        `Maximum of ${maxImages} images allowed.`
-      );
-
-      event.target.value = "";
+      setError(`Maximum of ${maxImages} images allowed.`);
+      input.value = "";
       return;
     }
 
@@ -108,113 +72,43 @@ export default function AboutImageUploader({
 
     try {
       setUploading(true);
+      const response = await adminAboutApi.uploadImages(filesToUpload);
+      const uploaded: AboutImage[] = Array.isArray(response) ? response : [];
 
-      /*
-       * For single-image fields, upload the new image first.
-       * After successful upload, delete the old image.
-       *
-       * This prevents losing the old image if the new upload fails.
-       */
-
-      const uploaded =
-        await adminAboutApi.uploadImages(
-          filesToUpload
-        );
+      if (uploaded.length === 0 || !uploaded[0]) {
+        throw new Error("Image upload completed but no image was returned.");
+      }
 
       if (multiple) {
-        onImagesChange([
-          ...images,
-          ...uploaded,
-        ]);
+        onImagesChange([...images, ...uploaded]);
       } else {
-        const newImage = uploaded[0];
-
-        if (!newImage) {
-          throw new Error(
-            "Image upload completed but no image was returned."
-          );
-        }
-
-        const oldImage = images[0];
-
-        onImagesChange([newImage]);
-
-        /*
-         * Delete the previous image after the new image
-         * has been successfully uploaded and attached
-         * to the frontend state.
-         */
-        if (oldImage) {
-          try {
-            await adminAboutApi.deleteImage(
-              oldImage.publicId
-            );
-          } catch (deleteError) {
-            console.error(
-              "Failed to delete previous image:",
-              deleteError
-            );
-          }
-        }
+        onImagesChange([uploaded[0]]);
       }
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to upload image."
-      );
+      setError(err instanceof Error ? err.message : "Failed to upload image.");
     } finally {
       setUploading(false);
-      event.target.value = "";
+      input.value = "";
     }
   };
 
-  const handleDelete = async (
-    image: AboutImage
-  ) => {
+  const handleDelete = async (image: AboutImage) => {
     try {
       setDeletingId(image.publicId);
       setError("");
-
-      await adminAboutApi.deleteImage(
-        image.publicId
-      );
-
-      onImagesChange(
-        images.filter(
-          (item) =>
-            item.publicId !== image.publicId
-        )
-      );
+      await adminAboutApi.deleteImage(image.publicId);
+      onImagesChange(images.filter((item) => item.publicId !== image.publicId));
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to delete image."
-      );
+      setError(err instanceof Error ? err.message : "Failed to delete image.");
     } finally {
       setDeletingId(null);
     }
   };
 
-  /*
-   * Multiple uploader:
-   * Upload is available until maxImages is reached.
-   *
-   * Single uploader:
-   * Upload is always available so the existing image
-   * can be replaced.
-   */
-  const canUpload = multiple
-    ? images.length < maxImages
-    : true;
+  const canUpload = multiple ? images.length < maxImages : true;
 
   return (
     <div>
-      {/* =======================================================
-          LABEL
-      ======================================================= */}
-
       <div className="mb-3 flex items-center justify-between gap-3">
         <label
           htmlFor={inputId}
@@ -222,50 +116,67 @@ export default function AboutImageUploader({
         >
           {label}
         </label>
-
         <span className="text-xs text-gray-500">
           {images.length}/{maxImages}
         </span>
       </div>
 
-      {/* =======================================================
-          IMAGE PREVIEWS
-      ======================================================= */}
-
       {images.length > 0 && (
         <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {images.map((image) => {
-            const isDeleting =
-              deletingId === image.publicId;
+            const isDeleting = deletingId === image.publicId;
 
             return (
               <div
                 key={image.publicId}
                 className="overflow-hidden rounded-xl border border-gray-200 bg-white"
               >
-                {/* IMAGE */}
-
                 <div className="relative aspect-4/3 overflow-hidden bg-gray-100">
-                  {/*
-                   * Use Cloudinary URL directly.
-                   *
-                   * We intentionally don't use next/image here
-                   * because the Next.js image optimizer was
-                   * timing out while fetching Cloudinary images.
-                   */}
-
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={image.url}
-                    alt={
-                      image.alt ||
-                      `${label} image`
-                    }
-                    className="h-full w-full object-cover"
+                    alt={image.alt || `${label} image`}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    unoptimized
+                    className="object-cover"
                   />
-                </div>
 
-                {/* IMAGE ACTIONS */}
+                  {uploading && !multiple && (
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/45 text-white"
+                    >
+                      <svg
+                        className="h-8 w-8 animate-spin"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="9"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          className="opacity-30"
+                        />
+                        <path
+                          d="M21 12a9 9 0 0 0-9-9"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <span className="text-sm font-medium">
+                        Uploading new image...
+                      </span>
+                      <span className="text-xs">
+                        Your existing image is preserved
+                      </span>
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex items-center justify-between gap-3 p-3">
                   <p
@@ -274,20 +185,13 @@ export default function AboutImageUploader({
                   >
                     {image.publicId}
                   </p>
-
                   <button
                     type="button"
-                    onClick={() =>
-                      void handleDelete(image)
-                    }
-                    disabled={
-                      isDeleting || uploading
-                    }
+                    onClick={() => void handleDelete(image)}
+                    disabled={isDeleting || uploading}
                     className="shrink-0 rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isDeleting
-                      ? "Deleting..."
-                      : "Delete"}
+                    {isDeleting ? "Deleting..." : "Delete"}
                   </button>
                 </div>
               </div>
@@ -296,56 +200,85 @@ export default function AboutImageUploader({
         </div>
       )}
 
-      {/* =======================================================
-          UPLOAD AREA
-      ======================================================= */}
-
       {canUpload && (
-        <label
-          htmlFor={inputId}
-          className={`block w-full rounded-xl border border-dashed border-gray-300 bg-gray-50 px-5 py-8 text-center transition ${
+        <div
+          className={`rounded-xl border border-dashed border-gray-300 bg-gray-50 px-5 py-8 text-center transition ${
             uploading
-              ? "cursor-not-allowed opacity-60"
-              : "cursor-pointer hover:border-gray-400 hover:bg-gray-100"
+              ? "cursor-wait"
+              : "hover:border-gray-400 hover:bg-gray-100"
           }`}
         >
-          <span className="block text-sm font-semibold text-gray-800">
-            {uploading
-              ? "Uploading..."
-              : images.length > 0
-              ? "Replace Image"
-              : "Upload Image"}
-          </span>
+          <label
+            htmlFor={inputId}
+            className={
+              uploading
+                ? "pointer-events-none flex flex-col items-center"
+                : "flex cursor-pointer flex-col items-center"
+            }
+          >
+            {uploading ? (
+              <>
+                <svg
+                  className="mb-3 h-8 w-8 animate-spin text-gray-700"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="9"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    className="opacity-20"
+                  />
+                  <path
+                    d="M21 12a9 9 0 0 0-9-9"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span
+                  role="status"
+                  aria-live="polite"
+                  className="text-sm font-semibold text-gray-800"
+                >
+                  Uploading your image...
+                </span>
+                <span className="mt-2 text-xs text-gray-500">
+                  Please wait while your image is being saved.
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-sm font-semibold text-gray-800">
+                  {images.length > 0 ? "Replace Image" : "Upload Image"}
+                </span>
+                <span className="mt-1 block text-xs text-gray-500">
+                  JPG, PNG or WEBP · Max 10MB
+                </span>
+              </>
+            )}
 
-          <span className="mt-1 block text-xs text-gray-500">
-            JPG, PNG or WEBP · Max 10MB
-          </span>
-
-          <input
-            id={inputId}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple={multiple}
-            onChange={handleSelectFiles}
-            disabled={uploading}
-            className="sr-only"
-          />
-        </label>
+            <input
+              id={inputId}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple={multiple}
+              onChange={handleSelectFiles}
+              disabled={uploading}
+              className="sr-only"
+            />
+          </label>
+        </div>
       )}
-
-      {/* =======================================================
-          MAXIMUM LIMIT
-      ======================================================= */}
 
       {multiple && !canUpload && (
         <p className="mt-2 text-xs text-gray-500">
           Maximum number of images reached.
         </p>
       )}
-
-      {/* =======================================================
-          ERROR
-      ======================================================= */}
 
       {error && (
         <div
